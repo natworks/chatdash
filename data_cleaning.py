@@ -4,9 +4,14 @@ from io import StringIO
 from datetime import datetime
 
 
-def preprocess_input_data(chat_file):
+def preprocess_input_data(chat_file, year=2021):
 
-    lines = StringIO(chat_file.getvalue().decode("utf-8")).readlines()
+    lines = StringIO(chat_file.getvalue().decode("utf-8")).readlines()[1:]
+
+    # the sinal chat has already been formatted, does not have a date
+    if re.search(r'(\d+/\d+/\d+)', lines[0]) is None:
+        chat = pd.read_csv(chat_file, sep=',')
+        return chat[chat['year']== year]
 
     ## check if it is a normal message
     is_normal_message = None
@@ -23,7 +28,10 @@ def preprocess_input_data(chat_file):
     else:
         raise ValueError("I'm sorry, I cannot make sense of this file format. :(")
 
-    return pd.DataFrame.from_dict(dict_file)
+    chat = pd.DataFrame.from_dict(dict_file)
+
+    return chat[chat['year']== str(year)]
+
 
 
 
@@ -32,9 +40,8 @@ def process_data(lines, formatting='android'):
                  "hour_quartile": [], "author": [], "body": []}
     
     name_pattern = '- (.*?):' if formatting=='android' else '] (.*?):'
-    date_pattern = '(\d+/\d+/\d+,)' if formatting=='android' else '(\d+/\d+/\d+\s(.*?)])'
+    date_pattern = '(\d+/\d+/\d+\,(.*?)\-)' if formatting=='android' else '(\d+/\d+/\d+\s(.*?)])'
     hour_pattern = '%d/%m/%Y, %H:%M' if formatting=='android' else '%d/%m/%Y %H:%M:%S'
-    offset = 1 if formatting=='android' else 0
     
     for idx, line in enumerate(lines):
                 
@@ -46,7 +53,7 @@ def process_data(lines, formatting='android'):
         if date_info is not None:
             has_author = re.search(r"{}".format(name_pattern), line)
             if has_author is not None:
-                date = datetime.strptime(date_info.group(1)[:-1], hour_pattern)
+                date = datetime.strptime(date_info.group(1)[:-1].strip(), hour_pattern)
 
                 dict_file['weekday'].append(datetime.strftime(date, '%a'))
                 dict_file['month'].append(datetime.strftime(date, '%b'))
@@ -71,3 +78,24 @@ def process_data(lines, formatting='android'):
                 dict_file["body"].append(previous_line)
 
     return dict_file
+
+def get_users(chat_data):
+    list_of_authors = list(chat_data['author'].unique())
+    author_names = []
+    phone_numbers = []
+    for author in list_of_authors:
+        is_name_numerical = re.search(r'(\+\d+)', author)
+        if is_name_numerical is None:
+            author_names.append(author)
+        else:
+            phone_numbers.append(is_name_numerical.group(1))
+    return author_names, phone_numbers
+
+
+def fix_phone_numbers(chat_data, num_name_pairs):
+
+    for num, name in num_name_pairs.items():
+        chat_data.loc[chat_data['author'] == num, 'author'] = name
+
+    # return chat_data
+    

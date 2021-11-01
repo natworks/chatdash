@@ -1,6 +1,6 @@
 import streamlit as st
 
-import data_handling
+import data_cleaning
 import data_analysis
 
 
@@ -18,5 +18,24 @@ chat_file = st.file_uploader(
 )
 
 if chat_file is not None:
-    preprocessed_chat_data = data_handling.preprocess_input_data(chat_file)
-    data_analysis.display_general_analysis(preprocessed_chat_data)
+    
+    preprocessed_chat_data = data_cleaning.preprocess_input_data(chat_file) 
+    author_names, phone_numbers = data_cleaning.get_users(preprocessed_chat_data)
+    num_name_pairs = {}
+    if phone_numbers:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("Hi there! Could you please let us know to whom these numbers belong. The Plots will update accordingly : )")
+        with col2:
+            for pn in phone_numbers:
+                num_name_pairs[pn] = st.selectbox(pn,(author_names))
+       
+        data_cleaning.fix_phone_numbers(preprocessed_chat_data, num_name_pairs)
+    # else:
+    #     data_for_analysis = preprocessed_chat_data
+
+    st.markdown("***")
+    st.text("")
+    st.text("")
+    data_analysis.display_num_of_messages(preprocessed_chat_data)
