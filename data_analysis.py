@@ -61,6 +61,36 @@ def display_num_of_messages(chat_data: pd.DataFrame):
 
     st.altair_chart(c, use_container_width=True)
 
-"""
-Semantic analysis
-"""
+def get_freq_plot(data, column, column_renamed, sorting_order):
+    msg_count = data[column].value_counts().to_frame()
+    msg_count.reset_index(inplace=True)
+    msg_count.columns = [column_renamed, 'Messages']
+
+    chart = alt.Chart(msg_count).mark_bar().encode(
+        x=alt.X(f'{column_renamed}', sort=sorting_order),
+        y='Messages',
+        color=alt.condition(
+            alt.datum.Messages > int(msg_count.iloc[1,1]),  # If the message count is the max returns True,
+            alt.value('#9d0208'),     # which sets the bar orange.
+            alt.value('#457b9d')   # And if it's not true it sets the bar steelblue.
+        )
+    )
+    return chart, msg_count.iloc[0,0]
+
+def display_time_info(chat_data: pd.DataFrame):
+    month_chat, top_month  = get_freq_plot(chat_data, 'month', 'Month', ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+    day_chat, top_day = get_freq_plot(chat_data, 'weekday', 'Weekday',["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
+    hour_chat, top_hour = get_freq_plot(chat_data, 'hour_of_day', 'Hour of Day', ['{:02d}'.format(t) for t in range(24)])
+
+    st.subheader("The Busiest...")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Month of the year", top_month, None)
+        st.altair_chart(month_chat, use_container_width=True)
+    with col2:
+        st.metric("Day of the week", top_day, None)
+        st.altair_chart(day_chat, use_container_width=True)
+    with col3:
+        st.metric("Hour of the day", f"{top_hour}hr", None)
+        st.altair_chart(hour_chat, use_container_width=True)
