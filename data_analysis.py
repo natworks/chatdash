@@ -1,6 +1,12 @@
+import re
+import numpy as np
 import pandas as pd
+
+import emoji
 import altair as alt
 import streamlit as st
+
+import data_cleaning
 
 def display_signal_analysis(chat_data: pd.DataFrame):
     """
@@ -53,10 +59,9 @@ def display_num_of_messages(chat_data: pd.DataFrame):
     )
 
     c = (chart + text).properties(
-        title=f'Total messages in 2021: {total_msgs:,}').configure_title(
+        title=f'2021 Messages: {total_msgs:,}').configure_title(
         fontSize=20,
-        font='Courier',
-        anchor='middle',
+        anchor='middle'
     )
 
     st.altair_chart(c, use_container_width=True)
@@ -86,11 +91,57 @@ def display_time_info(chat_data: pd.DataFrame):
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Month of the year", top_month, None)
+        st.metric("Month of the year is:", top_month, None)
         st.altair_chart(month_chat, use_container_width=True)
     with col2:
-        st.metric("Day of the week", top_day, None)
+        st.metric("Day of the week is:", top_day, None)
         st.altair_chart(day_chat, use_container_width=True)
     with col3:
-        st.metric("Hour of the day", f"{top_hour}hr", None)
+        st.metric("Hour of the day is:", f"{top_hour}:00hr", None)
         st.altair_chart(hour_chat, use_container_width=True)
+
+def display_favourite_emojis(chat_data: pd.DataFrame):
+    text = " ".join(str(msg) for msg in chat_data.body)
+    all_emojis = "".join(word for word in text if emoji.is_emoji(word))
+
+    unique_emojis = list(set(all_emojis))
+    emoji_count = []
+
+    for emoj in unique_emojis:
+        count = all_emojis.count(emoj)
+        emoji_count.append(count)
+
+    arg_sorted = np.argsort(emoji_count, )[::-1]
+
+    st.subheader("Your group's favourite emojis:")
+
+    [col1, col2, col3, col4, col5] = st.columns(5)
+
+    for i, col in enumerate([col1, col2, col3, col4, col5]):
+        col.markdown(f'<span style="font-size: 72px;">{unique_emojis[arg_sorted[i]]}</span>', unsafe_allow_html=True)
+
+def display_biggest_spammer(chat_data: pd.DataFrame):
+    author_names, _ = data_cleaning.get_users(chat_data)
+    links_per_user = []
+    favourite_site = []
+    
+    for author in author_names:
+        author_msgs = chat_data[chat_data["author"]==author]
+        author_msgs_list = " ".join(str(msg) for msg in author_msgs.body)
+        websites = re.findall('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', author_msgs_list)
+        unique_websites = list(set(websites))
+        links_per_user.append(len(websites))
+        if len(websites) > 0:
+            counts = [
+                websites.count(site) for site in unique_websites
+            ]
+            sorted_idx = np.argsort(counts, )[::-1]
+            favourite_site.append([unique_websites[sorted_idx[0]], counts[sorted_idx[0]]])
+        else:
+            favourite_site.append([0, 0])
+
+    idx_spammer = links_per_user.index(max(links_per_user))
+    spammer = author_names[idx_spammer]
+    
+    st.markdown(f'<span style="font-size: 56px;">{spammer}</span> is the biggest spammer in your group.\
+        Their favourite source is {favourite_site[idx_spammer][0]}. In fact, they have shared this website alone {favourite_site[idx_spammer][1]} times in 2021.', unsafe_allow_html=True)

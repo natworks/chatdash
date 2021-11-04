@@ -33,8 +33,6 @@ def preprocess_input_data(chat_file, year=2021):
     return chat[chat['year']== str(year)]
 
 
-
-
 def process_data(lines, formatting='android'):
     dict_file = {"weekday": [], "month":[], "year": [], "hour_of_day": [], "minute_of_hour": [],
                  "hour_quartile": [], "author": [], "body": []}
@@ -78,6 +76,7 @@ def process_data(lines, formatting='android'):
                 dict_file["body"].append(previous_line)
 
     return dict_file
+
 
 def get_users(chat_data):
     list_of_authors = list(chat_data['author'].unique())

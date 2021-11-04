@@ -32,13 +32,13 @@ if chat_file is not None:
                 num_name_pairs[pn] = st.selectbox(pn,(author_names))
        
         data_cleaning.fix_phone_numbers(preprocessed_chat_data, num_name_pairs)
-    # else:
-    #     data_for_analysis = preprocessed_chat_data
 
     st.markdown("***")
     st.text("")
     st.text("")
     data_analysis.display_num_of_messages(preprocessed_chat_data)
     data_analysis.display_time_info(preprocessed_chat_data)
+    data_analysis.display_favourite_emojis(preprocessed_chat_data)
+    data_analysis.display_biggest_spammer(preprocessed_chat_data)
 
     
