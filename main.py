@@ -19,7 +19,7 @@ chat_file = st.file_uploader(
 
 if chat_file is not None:
     
-    preprocessed_chat_data = data_cleaning.preprocess_input_data(chat_file) 
+    preprocessed_chat_data, input_source = data_cleaning.preprocess_input_data(chat_file) 
     author_names, phone_numbers = data_cleaning.get_users(preprocessed_chat_data)
     num_name_pairs = {}
     if phone_numbers:
@@ -37,8 +37,11 @@ if chat_file is not None:
     st.text("")
     st.text("")
     data_analysis.display_num_of_messages(preprocessed_chat_data)
+    data_analysis.display_msg_gap(preprocessed_chat_data)
     data_analysis.display_time_info(preprocessed_chat_data)
     data_analysis.display_favourite_emojis(preprocessed_chat_data)
     data_analysis.display_biggest_spammer(preprocessed_chat_data)
+    data_analysis.display_media_person(preprocessed_chat_data, input_source)
+    data_analysis.display_quote(preprocessed_chat_data)
 
     

@@ -11,7 +11,7 @@ def preprocess_input_data(chat_file, year=2021):
     # the sinal chat has already been formatted, does not have a date
     if re.search(r'(\d+/\d+/\d+)', lines[0]) is None:
         chat = pd.read_csv(chat_file, sep=',')
-        return chat[chat['year']== year]
+        return chat[chat['year']== year], 'signal'
 
     ## check if it is a normal message
     is_normal_message = None
@@ -23,18 +23,20 @@ def preprocess_input_data(chat_file, year=2021):
 
     if re.search(r'(\d+/\d+/\d+,)', line_test) is not None:
         dict_file = process_data(lines)
+        input_source = 'android'
     elif re.search(r'(\d+/\d+/\d+\s(.*?)])', line_test) is not None:
         dict_file = process_data(lines, formatting='iphone')
+        input_source = 'iphone'
     else:
         raise ValueError("I'm sorry, I cannot make sense of this file format. :(")
 
     chat = pd.DataFrame.from_dict(dict_file)
 
-    return chat[chat['year']== str(year)]
+    return chat[chat['year']== str(year)], input_source
 
 
 def process_data(lines, formatting='android'):
-    dict_file = {"weekday": [], "month":[], "year": [], "hour_of_day": [], "minute_of_hour": [],
+    dict_file = {"day_of_month": [], "weekday": [], "month":[], "year": [], "hour_of_day": [], "minute_of_hour": [],
                  "hour_quartile": [], "author": [], "body": []}
     
     name_pattern = '- (.*?):' if formatting=='android' else '] (.*?):'
@@ -53,6 +55,7 @@ def process_data(lines, formatting='android'):
             if has_author is not None:
                 date = datetime.strptime(date_info.group(1)[:-1].strip(), hour_pattern)
 
+                dict_file['day_of_month'].append(datetime.strftime(date, '%d'))
                 dict_file['weekday'].append(datetime.strftime(date, '%a'))
                 dict_file['month'].append(datetime.strftime(date, '%b'))
                 dict_file['year'].append(datetime.strftime(date, '%Y'))
