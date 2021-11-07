@@ -1,33 +1,20 @@
 import re
-import plotly
+import requests
 import numpy as np
 import pandas as pd
-import plotly.express as px
+from io import BytesIO
 from datetime import datetime
+from PIL import Image, ImageDraw,ImageFont
 
 import emoji
-import altair as alt
+import plotly
 import streamlit as st
+import plotly.express as px
 
 import data_cleaning
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 
 def display_signal_analysis(chat_data: pd.DataFrame):
-    """
-
-    Most reacted to msg
-    Most beloved msg
-    Funniest Message
-
-    Funniest person (the one with most laug reactions)
-    Most beloved person (the one with the most heart reactions)
-
-    Favourite Reactions per user
-
-    Total group name changes
-    Number of group name changes per person
-    Title that stayed on the longest
-    """
     pass
 
 def get_date(row_idx, chat_data):
@@ -192,24 +179,73 @@ def display_biggest_spammer(chat_data: pd.DataFrame):
 
     st.image("./imgs/awkward.png", caption='awkward..')
 
+def split_sentence(input_phrase, char_per_line=22):
+    sentences = ""
+    text = ''
+    all_words = input_phrase.split(' ')
+#     print(all_words)
+    start = 0
+    complete = False
+    while not complete:
+        text = ''
+#         print(start, 'sentences: ', sentences)
+        for idx in range(start, len(all_words)):
+            tmp_text = text + all_words[idx]
+#             print(idx, tmp_text, len(tmp_text))
+            if len(tmp_text) > char_per_line:
+                start = idx
+                sentences += f'{text}\n'
+                break
+            else:
+                text += f'{all_words[idx]} '
+                start = idx
+
+#         print('bottom', start, text, len(text))
+        if start == len(all_words) - 1 and len(tmp_text) < char_per_line:
+            sentences += f'{text}\n'
+            complete = True
+            
+    return sentences
+
+
 def display_quote(chat_data: pd.DataFrame):
-
-    # rand_msgs = chat_data.sample(n=3)
-
-    st.subheader("Here are some messages to remember:")
-
     count = 0
+    images = {}
+    
+    url = f"https://api.unsplash.com/photos/random/?topics=='nature'&count=3&orientation=landscape&client_id={YOUR_ACCESS_KEY}"
+    
+    r = requests.get(url) #, data=token_data, headers=token_headers)
+    token_response_data = r.json()
+
+    font = ImageFont.truetype("./fonts/philosopher/Philosopher-BoldItalic.ttf", 36, encoding='unic')
+    
     while count < 3:
         i = np.random.randint(0, chat_data.shape[0], size=1)[0]
         txt = "'{}'".format(chat_data.iloc[i, chat_data.columns.get_loc("body")])
         author = chat_data.iloc[i, chat_data.columns.get_loc("author")]
-        print(txt)
-
-        if len(txt) > 5 and 'kkk' not in txt and 'haha' not in txt and 'http' not in txt and 'gif' not in txt and 'GIF' not in txt and 'vídeo' not in txt \
+        
+        if 5< len(txt) < 200 and 'kkk' not in txt and 'haha' not in txt and 'http' not in txt and 'gif' not in txt and 'GIF' not in txt and 'vídeo' not in txt \
             and 'video' not in txt and 'image' not in txt and 'audio' not in txt and '‎áudio' not in txt:
-            st.markdown(f'<span style="font-size: 28px; font-style: italic"/>{txt}</span>',  unsafe_allow_html=True)
+            print(txt)
+            
+            response = requests.get(token_response_data[count]['urls']['raw'] + "&w=600")
+            images[count] = Image.open(BytesIO(response.content))
+            
+            d = ImageDraw.Draw(images[count])
+            width, height = images[count].size
+            
+            sentences = split_sentence(txt,char_per_line=26)
+            
+            d.multiline_text((int(width*0.1),int(height*0.15)), "{}".format(sentences), font=font, fill=(255, 255, 255))
+            d.multiline_text((int(width*0.55),int(height*0.8)), "-{}".format(author), font=font, fill=(255, 255, 255))
             count += 1
 
+    st.subheader("Here are some messages to remember:")
+    for i in range(3):
+        st.image(images[i], caption='Original Image by: {} ({}) from Unsplash'.format(
+            token_response_data[i]['user']['name'],
+            token_response_data[i]['user']['links']['html'].split('/')[-1],
+        ))
 
 def handle_signal_media(chat_data: pd.DataFrame):
     author_names, _ = data_cleaning.get_users(chat_data)
@@ -237,7 +273,7 @@ def handle_signal_media(chat_data: pd.DataFrame):
              values='media', names='authors', color_discrete_sequence=px.colors.sequential.RdBu)
     st.plotly_chart(fig, use_container_width=True)
     st.text("")
-    st.markdown(f'<span style="font-size: 56px;">{audio_person}</span> is almost a podcast host. They have shared {max(audios_per_author)} audios this year. Don\'t forget to like and subscribe!', unsafe_allow_html=True)
+    st.markdown(f'<span style="font-size: 56px;">{audio_person}</span> is almost a podcast host. They have shared the most audios this year. Don\'t forget to like and subscribe!', unsafe_allow_html=True)
     fig = px.pie(pd.DataFrame.from_dict({"authors": author_names, "media": audios_per_author}),
              values='media', names='authors', color_discrete_sequence=px.colors.sequential.RdBu)
     st.plotly_chart(fig, use_container_width=True)
