@@ -9,10 +9,17 @@ from PIL import Image, ImageDraw,ImageFont
 import emoji
 import plotly
 import streamlit as st
+from matplotlib import cm
 import plotly.express as px
+import plotly.graph_objects as go
 
 import data_cleaning
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
+
+MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+HOURS = ['{:02d}'.format(t) for t in range(24)]
+CMAP = cm.get_cmap('RdYlBu')
 
 def display_signal_analysis(chat_data: pd.DataFrame):
     pass
@@ -24,7 +31,7 @@ def get_date(row_idx, chat_data):
         chat_data.iloc[row_idx, chat_data.columns.get_loc("day_of_month")],
         chat_data.iloc[row_idx, chat_data.columns.get_loc("month")],
         chat_data.iloc[row_idx, chat_data.columns.get_loc("year")]
-    ), "%H:%M %d %b %Y")
+    ), "%H:%M %d %B %Y")
     return date
 
 def get_quietest_interval(chat_data):
@@ -81,7 +88,6 @@ def display_msg_gap(chat_data: pd.DataFrame):
             interval_end
         ))
 
-    # st.image("./imgs/rookie_numbers.jpg", caption='Meme Pump Numbers')
     st.text("")
 
 def display_num_of_messages(chat_data: pd.DataFrame):
@@ -104,32 +110,57 @@ def display_num_of_messages(chat_data: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def get_freq_plot(data, column, column_renamed, sorting_order):
-    msg_count = data[column].value_counts().to_frame()
-    msg_count.reset_index(inplace=True)
-    msg_count.columns = [column_renamed, 'Messages']
-
-    fig = px.bar(msg_count, y='Messages', x=column_renamed)
+def get_frequency_info(chat_data, column, column_renamed, sorting_order, author_names):
+    c_gaps = [(np.asarray(CMAP((i+1)/len(author_names))[:-1])*255).astype(np.uint8) for i in range(len(author_names))]
+    markers = ['rgb({}, {}, {})'.format(e[0], e[1], e[2]) for e in c_gaps]
     
-    return fig, msg_count.iloc[0,0]
+    all_col_names = set(chat_data[column].unique())
+    data = []
+    values = [0] * len(all_col_names)
+    for c, author in enumerate(author_names):
+        individual_info = chat_data[chat_data["author"]==author][column].value_counts().to_frame()
+        individual_info.reset_index(inplace=True)
+        individual_info.columns = [column_renamed, 'Messages']
+
+
+        person = set(individual_info[column_renamed].unique())
+
+        if all_col_names != person:
+            diff = all_col_names - person
+            for d in diff:
+                individual_info = individual_info.append({column_renamed: d, 'Messages': 0}, ignore_index=True)
+
+        tmp = individual_info.set_index(column_renamed, drop=False)
+        available_data = individual_info[column_renamed].to_list()
+        ordered_data = [v for v in sorting_order if v in available_data]
+        sorted_data = tmp.loc[ordered_data]
+        values += sorted_data.to_numpy()[:,1]
+        data.append(go.Bar(name=author, x=ordered_data,
+                           y=list(sorted_data['Messages']),
+                           marker_color=markers[c]))
+        
+    fig = go.Figure(data=data)
+    fig.update_layout(barmode='stack')
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', plot_bgcolor='rgb(255,255, 255)')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgb(220,220,220)')
+    
+    return fig, ordered_data[np.argmax(values)]
 
 def display_time_info(chat_data: pd.DataFrame):
-    month_chat, top_month  = get_freq_plot(chat_data, 'month', 'Month', ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
-    day_chat, top_day = get_freq_plot(chat_data, 'weekday', 'Weekday',["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
-    hour_chat, top_hour = get_freq_plot(chat_data, 'hour_of_day', 'Hour of Day', ['{:02d}'.format(t) for t in range(24)])
+    author_names, _ = data_cleaning.get_users(chat_data)
+    month_chart, top_month  = get_frequency_info(chat_data, 'month', 'Month', MONTHS, author_names)
+    day_chart, top_day = get_frequency_info(chat_data, 'weekday', 'Weekday', WEEKDAYS, author_names)
+    hour_chart, top_hour = get_frequency_info(chat_data, 'hour_of_day', 'Hour of Day', HOURS, author_names)
 
     st.subheader("The Busiest...")
+    st.text("")
+    st.text(f"Month of the year is {top_month}")
+    st.plotly_chart(month_chart, use_container_width=True)
+    st.text(f"Day of the week is {top_day}")
+    st.plotly_chart(day_chart, use_container_width=True)
+    st.text(f"Time of the day is at {top_hour}:00hr" )
+    st.plotly_chart(hour_chart, use_container_width=True)
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Month of the year is:", top_month, None)
-        st.plotly_chart(month_chat, use_container_width=True)
-    with col2:
-        st.metric("Day of the week is:", top_day, None)
-        st.plotly_chart(day_chat, use_container_width=True)
-    with col3:
-        st.metric("Hour of the day is:", f"{top_hour}:00hr", None)
-        st.plotly_chart(hour_chat, use_container_width=True)
 
 def display_favourite_emojis(chat_data: pd.DataFrame):
     text = " ".join(str(msg) for msg in chat_data.body)
@@ -183,15 +214,12 @@ def split_sentence(input_phrase, char_per_line=22):
     sentences = ""
     text = ''
     all_words = input_phrase.split(' ')
-#     print(all_words)
     start = 0
     complete = False
     while not complete:
         text = ''
-#         print(start, 'sentences: ', sentences)
         for idx in range(start, len(all_words)):
             tmp_text = text + all_words[idx]
-#             print(idx, tmp_text, len(tmp_text))
             if len(tmp_text) > char_per_line:
                 start = idx
                 sentences += f'{text}\n'
@@ -200,7 +228,6 @@ def split_sentence(input_phrase, char_per_line=22):
                 text += f'{all_words[idx]} '
                 start = idx
 
-#         print('bottom', start, text, len(text))
         if start == len(all_words) - 1 and len(tmp_text) < char_per_line:
             sentences += f'{text}\n'
             complete = True
@@ -211,7 +238,7 @@ def split_sentence(input_phrase, char_per_line=22):
 def display_quote(chat_data: pd.DataFrame):
     count = 0
     images = {}
-    
+    YOUR_ACCESS_KEY = 
     url = f"https://api.unsplash.com/photos/random/?topics=='nature'&count=3&orientation=landscape&client_id={YOUR_ACCESS_KEY}"
     
     r = requests.get(url) #, data=token_data, headers=token_headers)
@@ -224,7 +251,7 @@ def display_quote(chat_data: pd.DataFrame):
         txt = "'{}'".format(chat_data.iloc[i, chat_data.columns.get_loc("body")])
         author = chat_data.iloc[i, chat_data.columns.get_loc("author")]
         
-        if 5< len(txt) < 200 and 'kkk' not in txt and 'haha' not in txt and 'http' not in txt and 'gif' not in txt and 'GIF' not in txt and 'vídeo' not in txt \
+        if 5< len(txt) < 200 and '<Media omitted>' not in txt and 'kkk' not in txt and 'haha' not in txt and 'http' not in txt and 'gif' not in txt and 'GIF' not in txt and 'vídeo' not in txt \
             and 'video' not in txt and 'image' not in txt and 'audio' not in txt and '‎áudio' not in txt:
             print(txt)
             
@@ -237,7 +264,7 @@ def display_quote(chat_data: pd.DataFrame):
             sentences = split_sentence(txt,char_per_line=26)
             
             d.multiline_text((int(width*0.1),int(height*0.15)), "{}".format(sentences), font=font, fill=(255, 255, 255))
-            d.multiline_text((int(width*0.55),int(height*0.8)), "-{}".format(author), font=font, fill=(255, 255, 255))
+            d.multiline_text((int(width*0.40),int(height*0.8)), "-{}".format(author), font=font, fill=(255, 255, 255))
             count += 1
 
     st.subheader("Here are some messages to remember:")

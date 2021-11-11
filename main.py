@@ -37,7 +37,7 @@ if chat_file is not None:
     st.text("")
     st.text("")
     data_analysis.display_num_of_messages(preprocessed_chat_data)
-    # data_analysis.display_msg_gap(preprocessed_chat_data)
+    data_analysis.display_msg_gap(preprocessed_chat_data)
     data_analysis.display_time_info(preprocessed_chat_data)
     data_analysis.display_favourite_emojis(preprocessed_chat_data)
     data_analysis.display_biggest_spammer(preprocessed_chat_data)

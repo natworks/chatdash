@@ -4,13 +4,13 @@ from io import StringIO
 from datetime import datetime
 
 
-def preprocess_input_data(chat_file, year=2021):
+def preprocess_input_data(chat_file, year='2021'):
 
     lines = StringIO(chat_file.getvalue().decode("utf-8")).readlines()[1:]
 
     # the sinal chat has already been formatted, does not have a date
     if re.search(r'(\d+/\d+/\d+)', lines[0]) is None:
-        chat = pd.read_csv(chat_file, sep=',')
+        chat = pd.read_csv(chat_file, sep=',', dtype=str, na_values='Nan')
         return chat[chat['year']== year], 'signal'
 
     ## check if it is a normal message
@@ -32,7 +32,7 @@ def preprocess_input_data(chat_file, year=2021):
 
     chat = pd.DataFrame.from_dict(dict_file)
 
-    return chat[chat['year']== str(year)], input_source
+    return chat[chat['year']== year], input_source
 
 
 def process_data(lines, formatting='android'):
@@ -56,8 +56,8 @@ def process_data(lines, formatting='android'):
                 date = datetime.strptime(date_info.group(1)[:-1].strip(), hour_pattern)
 
                 dict_file['day_of_month'].append(datetime.strftime(date, '%d'))
-                dict_file['weekday'].append(datetime.strftime(date, '%a'))
-                dict_file['month'].append(datetime.strftime(date, '%b'))
+                dict_file['weekday'].append(datetime.strftime(date, '%A'))
+                dict_file['month'].append(datetime.strftime(date, '%B'))
                 dict_file['year'].append(datetime.strftime(date, '%Y'))
                 dict_file["hour_of_day"].append(datetime.strftime(date, '%H'))
                 minute_of_hour = datetime.strftime(date, '%M')
