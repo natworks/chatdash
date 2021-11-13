@@ -18,7 +18,7 @@ from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-HOURS = ['{:02d}'.format(t) for t in range(24)]
+HOURS = [str(t) for t in range(24)]
 CMAP = cm.get_cmap('RdYlBu')
 
 def display_signal_analysis(chat_data: pd.DataFrame):
@@ -79,8 +79,6 @@ def display_msg_gap(chat_data: pd.DataFrame):
         chat_data.iloc[quiest_interval_id, chat_data.columns.get_loc("month")],
         )
 
-    
-
     st.write("That is an average of {} messages per day! The longest period without messages was {}. It happened between {} and {}.".format(
             daily_average,
             formatted_time,
@@ -99,15 +97,17 @@ def display_num_of_messages(chat_data: pd.DataFrame):
     msg_count.columns = ['Author', 'Count']
     total_msgs = msg_count['Count'].sum()
 
-    st.markdown(f'<span style="font-size: 24px;">In 2021, you group has sent a total of {total_msgs:,} messages. Here is everyone\'s contributions:</span>', unsafe_allow_html=True)
-    st.text("")
+    # st.markdown(f'<span style="font-size: 24px;">In 2021, you group has sent a total of {total_msgs:,} messages. Here is everyone\'s contributions:</span>', unsafe_allow_html=True)
+    # st.text("")
 
-    fig = px.bar(msg_count, y='Count', x='Author', text='Count', color="Count",
+    fig = px.bar(msg_count, y='Count', text='Count', x='Author', color="Count",
              color_continuous_scale=plotly.colors.sequential.Sunset)
     fig.update_traces(texttemplate='%{text:.2s}', textposition='outside', showlegend=False) #, marker_coloraxis=None)
     fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide',  plot_bgcolor='rgb(255,255, 255)', coloraxis_showscale=False)
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgb(220,220,220)')
-    st.plotly_chart(fig, use_container_width=True)
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgb(220,220,220)', title={'text':'Number of Messages'})
+    # st.plotly_chart(fig, use_container_width=True)
+
+    return fig
 
 
 def get_frequency_info(chat_data, column, column_renamed, sorting_order, author_names):
@@ -129,7 +129,6 @@ def get_frequency_info(chat_data, column, column_renamed, sorting_order, author_
             diff = all_col_names - person
             for d in diff:
                 individual_info = individual_info.append({column_renamed: d, 'Messages': 0}, ignore_index=True)
-
         tmp = individual_info.set_index(column_renamed, drop=False)
         available_data = individual_info[column_renamed].to_list()
         ordered_data = [v for v in sorting_order if v in available_data]
@@ -142,7 +141,8 @@ def get_frequency_info(chat_data, column, column_renamed, sorting_order, author_
     fig = go.Figure(data=data)
     fig.update_layout(barmode='stack')
     fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', plot_bgcolor='rgb(255,255, 255)')
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgb(220,220,220)')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgb(220,220,220)', title={'text': 'Number of Messages'})
+    fig.update_xaxes(title={'text': column_renamed})
     
     return fig, ordered_data[np.argmax(values)]
 
@@ -238,7 +238,7 @@ def split_sentence(input_phrase, char_per_line=22):
 def display_quote(chat_data: pd.DataFrame):
     count = 0
     images = {}
-    YOUR_ACCESS_KEY = 
+    
     url = f"https://api.unsplash.com/photos/random/?topics=='nature'&count=3&orientation=landscape&client_id={YOUR_ACCESS_KEY}"
     
     r = requests.get(url) #, data=token_data, headers=token_headers)

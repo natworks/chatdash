@@ -3,15 +3,22 @@ import pandas as pd
 from io import StringIO
 from datetime import datetime
 
+import streamlit as st
+
+MONTHS = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June',
+7:'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
+WEEKDAYS = {0: 'Monday', 1: 'Tuesday', 2: 'Wednesday', 3: 'Thursday',
+4: 'Friday', 5: 'Saturday', 6: 'Sunday'}
+
 
 def preprocess_input_data(chat_file, year='2021'):
 
-    lines = StringIO(chat_file.getvalue().decode("utf-8")).readlines()[1:]
+    lines = StringIO(chat_file.decode("utf-8")).readlines()[1:]
 
     # the sinal chat has already been formatted, does not have a date
     if re.search(r'(\d+/\d+/\d+)', lines[0]) is None:
-        chat = pd.read_csv(chat_file, sep=',', dtype=str, na_values='Nan')
-        return chat[chat['year']== year], 'signal'
+        chat = pd.read_csv(StringIO(chat_file.decode('utf-8')), sep=',')
+        return chat, 'signal'
 
     ## check if it is a normal message
     is_normal_message = None
@@ -32,52 +39,41 @@ def preprocess_input_data(chat_file, year='2021'):
 
     chat = pd.DataFrame.from_dict(dict_file)
 
-    return chat[chat['year']== year], input_source
+    return chat, input_source #[chat['year']== year], input_source
 
 
+# @st.cache(allow_output_mutation=True)
 def process_data(lines, formatting='android'):
-    dict_file = {"day_of_month": [], "weekday": [], "month":[], "year": [], "hour_of_day": [], "minute_of_hour": [],
-                 "hour_quartile": [], "author": [], "body": []}
+    dict_file = {"day_of_month": [], "weekday": [], "month":[], "year": [], 
+                 "hour_of_day": [], "minute_of_hour": [], "author": [], "body": []}
     
     name_pattern = '- (.*?):' if formatting=='android' else '] (.*?):'
     date_pattern = '(\d+/\d+/\d+\,(.*?)\-)' if formatting=='android' else '(\d+/\d+/\d+\s(.*?)])'
     hour_pattern = '%d/%m/%Y, %H:%M' if formatting=='android' else '%d/%m/%Y %H:%M:%S'
     
-    for idx, line in enumerate(lines):
+    for line in lines:
                 
         line = line.strip()
 
         date_info = re.search(r"{}".format(date_pattern),line)
-        previous_line = ""
+        has_author = re.search(r"{}".format(name_pattern), line)
 
-        if date_info is not None:
-            has_author = re.search(r"{}".format(name_pattern), line)
-            if has_author is not None:
-                date = datetime.strptime(date_info.group(1)[:-1].strip(), hour_pattern)
+        if date_info is not None and has_author is not None:
+            date = datetime.strptime(date_info.group(1)[:-1].strip(), hour_pattern)
 
-                dict_file['day_of_month'].append(datetime.strftime(date, '%d'))
-                dict_file['weekday'].append(datetime.strftime(date, '%A'))
-                dict_file['month'].append(datetime.strftime(date, '%B'))
-                dict_file['year'].append(datetime.strftime(date, '%Y'))
-                dict_file["hour_of_day"].append(datetime.strftime(date, '%H'))
-                minute_of_hour = datetime.strftime(date, '%M')
-                dict_file["minute_of_hour"].append(minute_of_hour)
-                dict_file["hour_quartile"].append(int(minute_of_hour)//15)
+            dict_file['day_of_month'].append(str(date.day))
+            dict_file['weekday'].append(WEEKDAYS[date.weekday()])
+            dict_file['month'].append(MONTHS[date.month])
+            dict_file['year'].append(str(date.year))
+            dict_file["hour_of_day"].append(str(date.hour))
+            dict_file["minute_of_hour"].append(str(date.minute))
 
-                dict_file["author"].append(has_author.group(1).strip().encode('ascii', 'ignore').decode("utf-8"))
+            dict_file["author"].append(has_author.group(1).strip().encode('ascii', 'ignore').decode("utf-8"))
+            dict_file["body"].append(line[has_author.span()[1]+1:])
+        
+        if date_info is None and has_author is None:
+            dict_file["body"][-1] += " {}".format(line)
                 
-                previous_line = line[has_author.span()[1]+1:].strip()
-                end_msg_block = False
-                counter = idx+1
-                while end_msg_block is not True and counter < len(lines)-1:
-                    block = re.search(r'(\d+/\d+/\d+)',lines[counter])
-                    if block is None:
-                        previous_line += lines[counter].strip()
-                    else:
-                        end_msg_block = True
-                    counter +=1
-                dict_file["body"].append(previous_line)
-
     return dict_file
 
 
