@@ -18,7 +18,7 @@ from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-HOURS = [str(t) for t in range(24)]
+HOURS = [t for t in range(24)]
 CMAP = cm.get_cmap('RdYlBu')
 
 def display_signal_analysis(chat_data: pd.DataFrame):
@@ -88,26 +88,23 @@ def display_msg_gap(chat_data: pd.DataFrame):
 
     st.text("")
 
-def display_num_of_messages(chat_data: pd.DataFrame):
+def display_num_of_messages(chat_data: pd.DataFrame, per_year: bool = False):
     """
     Biggest Message block   
     """
-    msg_count = chat_data["author"].value_counts().to_frame()
+    column = 'year' if per_year else 'author'
+    msg_count = chat_data[column].value_counts().to_frame()
     msg_count.reset_index(inplace=True)
-    msg_count.columns = ['Author', 'Count']
+    msg_count.columns = [column.capitalize(), 'Count']
     total_msgs = msg_count['Count'].sum()
 
-    # st.markdown(f'<span style="font-size: 24px;">In 2021, you group has sent a total of {total_msgs:,} messages. Here is everyone\'s contributions:</span>', unsafe_allow_html=True)
-    # st.text("")
-
-    fig = px.bar(msg_count, y='Count', text='Count', x='Author', color="Count",
+    fig = px.bar(msg_count, y='Count', text='Count', x=column.capitalize(), color="Count",
              color_continuous_scale=plotly.colors.sequential.Sunset)
     fig.update_traces(texttemplate='%{text:.2s}', textposition='outside', showlegend=False) #, marker_coloraxis=None)
     fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide',  plot_bgcolor='rgb(255,255, 255)', coloraxis_showscale=False)
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgb(220,220,220)', title={'text':'Number of Messages'})
-    # st.plotly_chart(fig, use_container_width=True)
 
-    return fig
+    return fig, total_msgs
 
 
 def get_frequency_info(chat_data, column, column_renamed, sorting_order, author_names):
@@ -174,13 +171,15 @@ def display_favourite_emojis(chat_data: pd.DataFrame):
         emoji_count.append(count)
 
     arg_sorted = np.argsort(emoji_count, )[::-1]
+    top_emojis = [unique_emojis[arg_sorted[i]] for i in range(5)]
+    return top_emojis
 
-    st.subheader("Your group's favourite emojis:")
+    # st.subheader("Your group's favourite emojis:")
 
-    [col1, col2, col3, col4, col5] = st.columns(5)
+    # [col1, col2, col3, col4, col5] = st.columns(5)
 
-    for i, col in enumerate([col1, col2, col3, col4, col5]):
-        col.markdown(f'<span style="font-size: 72px;">{unique_emojis[arg_sorted[i]]}</span>', unsafe_allow_html=True)
+    # for i, col in enumerate([col1, col2, col3, col4, col5]):
+    #     col.markdown(f'<span style="font-size: 72px;">{unique_emojis[arg_sorted[i]]}</span>', unsafe_allow_html=True)
 
 def display_biggest_spammer(chat_data: pd.DataFrame):
     author_names, _ = data_cleaning.get_users(chat_data)
@@ -203,12 +202,14 @@ def display_biggest_spammer(chat_data: pd.DataFrame):
             favourite_site.append([0, 0])
 
     idx_spammer = links_per_user.index(max(links_per_user))
-    spammer = author_names[idx_spammer]
-    
-    st.markdown(f'<span style="font-size: 56px;">{spammer}</span> is the biggest spammer in your group.\
-        Their favourite source is {favourite_site[idx_spammer][0]}. In fact, they have shared this website alone {favourite_site[idx_spammer][1]} times in 2021.', unsafe_allow_html=True)
+    return author_names[idx_spammer], favourite_site[idx_spammer][0], favourite_site[idx_spammer][1]
 
-    st.image("./imgs/awkward.png", caption='awkward..')
+    
+    
+    # st.markdown(f'<span style="font-size: 56px;">{spammer}</span> is the biggest spammer in your group.\
+    #     Their favourite source is {favourite_site[idx_spammer][0]}. In fact, they have shared this website alone {favourite_site[idx_spammer][1]} times in 2021.', unsafe_allow_html=True)
+
+    # st.image("./imgs/awkward.png", caption='awkward..')
 
 def split_sentence(input_phrase, char_per_line=22):
     sentences = ""
@@ -244,7 +245,7 @@ def display_quote(chat_data: pd.DataFrame):
     r = requests.get(url) #, data=token_data, headers=token_headers)
     token_response_data = r.json()
 
-    font = ImageFont.truetype("./fonts/philosopher/Philosopher-BoldItalic.ttf", 36, encoding='unic')
+    font = ImageFont.truetype("./fonts/philosopher/Philosopher-BoldItalic.ttf", 32, encoding='unic')
     
     while count < 3:
         i = np.random.randint(0, chat_data.shape[0], size=1)[0]
@@ -252,8 +253,7 @@ def display_quote(chat_data: pd.DataFrame):
         author = chat_data.iloc[i, chat_data.columns.get_loc("author")]
         
         if 5< len(txt) < 200 and '<Media omitted>' not in txt and 'kkk' not in txt and 'haha' not in txt and 'http' not in txt and 'gif' not in txt and 'GIF' not in txt and 'vídeo' not in txt \
-            and 'video' not in txt and 'image' not in txt and 'audio' not in txt and '‎áudio' not in txt:
-            print(txt)
+            and 'video' not in txt and 'image' not in txt and 'audio' not in txt:
             
             response = requests.get(token_response_data[count]['urls']['raw'] + "&w=600")
             images[count] = Image.open(BytesIO(response.content))
@@ -263,16 +263,11 @@ def display_quote(chat_data: pd.DataFrame):
             
             sentences = split_sentence(txt,char_per_line=26)
             
-            d.multiline_text((int(width*0.1),int(height*0.15)), "{}".format(sentences), font=font, fill=(255, 255, 255))
-            d.multiline_text((int(width*0.40),int(height*0.8)), "-{}".format(author), font=font, fill=(255, 255, 255))
+            d.multiline_text((int(width*0.1),int(height*0.05)), "{}".format(sentences), font=font, fill=(255, 255, 255))
+            d.multiline_text((int(width*0.40),int(height*0.85)), "-{}".format(author), font=font, fill=(255, 255, 255))
             count += 1
 
-    st.subheader("Here are some messages to remember:")
-    for i in range(3):
-        st.image(images[i], caption='Original Image by: {} ({}) from Unsplash'.format(
-            token_response_data[i]['user']['name'],
-            token_response_data[i]['user']['links']['html'].split('/')[-1],
-        ))
+    return images
 
 def handle_signal_media(chat_data: pd.DataFrame):
     author_names, _ = data_cleaning.get_users(chat_data)
@@ -295,45 +290,47 @@ def handle_signal_media(chat_data: pd.DataFrame):
     idx_audio_spammer = audios_per_author.index(max(audios_per_author))
     audio_person = author_names[idx_audio_spammer]
     
-    st.markdown(f'Sharing gifs is a skill that <span style="font-size: 56px;">{gif_person}</span> has certaily mastered, having shared {max(gifs_per_author)} gifs this year - more than anyone else in the group.', unsafe_allow_html=True)
-    fig = px.pie(pd.DataFrame.from_dict({"authors": author_names, "media": gifs_per_author}),
+    fig_gifs = px.pie(pd.DataFrame.from_dict({"authors": author_names, "media": gifs_per_author}),
              values='media', names='authors', color_discrete_sequence=px.colors.sequential.RdBu)
-    st.plotly_chart(fig, use_container_width=True)
-    st.text("")
-    st.markdown(f'<span style="font-size: 56px;">{audio_person}</span> is almost a podcast host. They have shared the most audios this year. Don\'t forget to like and subscribe!', unsafe_allow_html=True)
-    fig = px.pie(pd.DataFrame.from_dict({"authors": author_names, "media": audios_per_author}),
-             values='media', names='authors', color_discrete_sequence=px.colors.sequential.RdBu)
-    st.plotly_chart(fig, use_container_width=True)
 
-def handle_android_media(chat_data: pd.DataFrame):
+    fig_audios = px.pie(pd.DataFrame.from_dict({"authors": author_names, "media": audios_per_author}),
+             values='media', names='authors', color_discrete_sequence=px.colors.sequential.RdBu)
+
+    return gif_person, fig_gifs, audio_person, fig_audios
+    
+
+def handle_android_media(chat_data: pd.DataFrame, language: str):
     author_names, _ = data_cleaning.get_users(chat_data)
     media_per_author = []
 
+    prase = 'Mídia omitida' if language=='pt' else 'Media Omitted'
 
     for author in author_names:
         author_msgs = chat_data[chat_data["author"]==author]
         author_msgs_list = " ".join(str(msg) for msg in author_msgs.body)
-        media = re.findall('Media omitted', author_msgs_list)
+        media = re.findall(prase, author_msgs_list)
         media_per_author.append(len(media))
 
     idx_media_spammer = media_per_author.index(max(media_per_author))
     media_person = author_names[idx_media_spammer]
     
-    st.markdown(f'<span style="font-size: 56px;">{media_person}</span> is just sitting there sharing audios and gifs. They have sent a whopping {max(media_per_author)} messages containing media this year.', unsafe_allow_html=True)
     fig = px.pie(pd.DataFrame.from_dict({"authors": author_names, "media": media_per_author}),
              values='media', names='authors', color_discrete_sequence=px.colors.sequential.RdBu)
-    st.plotly_chart(fig, use_container_width=True)
+    return media_person, fig, max(media_per_author), []
 
-def handle_iphone_media(chat_data: pd.DataFrame):
+def handle_iphone_media(chat_data: pd.DataFrame, language: str):
     author_names, _ = data_cleaning.get_users(chat_data)
     gifs_per_author = []
     audios_per_author = []
 
+    gif_phrase = 'GIF omitido' if language=='pt' else 'GIF omitted'
+    audio_phrase = 'áudio ocultado' if language=='pt' else 'audio omitted'
+
     for author in author_names:
         author_msgs = chat_data[chat_data["author"]==author]
         author_msgs_list = " ".join(str(msg) for msg in author_msgs.body)
-        gifs = re.findall('GIF omitido', author_msgs_list)
-        audios = re.findall('áudio ocultado', author_msgs_list)
+        gifs = re.findall(gif_phrase, author_msgs_list)
+        audios = re.findall(audio_phrase, author_msgs_list)
         gifs_per_author.append(len(gifs))
         audios_per_author.append(len(audios))
 
@@ -342,23 +339,22 @@ def handle_iphone_media(chat_data: pd.DataFrame):
 
     idx_audio_spammer = audios_per_author.index(max(audios_per_author))
     audio_person = author_names[idx_audio_spammer]
+        
+    fig_gif = px.pie(pd.DataFrame.from_dict({"authors": author_names, "media": gifs_per_author}),
+             values='media', names='authors', color_discrete_sequence=px.colors.sequential.RdBu)
     
-    st.markdown(f'Sharing gifs is a skill that <span style="font-size: 56px;">{gif_person}</span> has certaily mastered, having shared {max(gifs_per_author)} gifs this year - more than anyone else in the group.', unsafe_allow_html=True)
-    fig = px.pie(pd.DataFrame.from_dict({"authors": author_names, "media": gifs_per_author}),
+    fig_audio = px.pie(pd.DataFrame.from_dict({"authors": author_names, "media": audios_per_author}),
              values='media', names='authors', color_discrete_sequence=px.colors.sequential.RdBu)
-    st.plotly_chart(fig, use_container_width=True)
-    st.text("")
-    st.markdown(f'<span style="font-size: 56px;">{audio_person}</span> is almost a podcast host. They have shared {max(audios_per_author)} audios this year. Don\'t forget to like and subscribe!', unsafe_allow_html=True)
-    fig = px.pie(pd.DataFrame.from_dict({"authors": author_names, "media": audios_per_author}),
-             values='media', names='authors', color_discrete_sequence=px.colors.sequential.RdBu)
-    st.plotly_chart(fig, use_container_width=True)
+    
+    return gif_person, fig_gif, audio_person, fig_audio
 
 def display_media_person(chat_data: pd.DataFrame, input_source: str):
+    body = " ".join(str(msg) for msg in chat_data.body)
+    language = 'pt' if 'omitida' in body else 'en'
     if input_source == 'signal':
-        handle_signal_media(chat_data)
+        return handle_signal_media(chat_data)
     elif input_source == 'android':
-        handle_android_media(chat_data)
+        return handle_android_media(chat_data, language)
     else:
-        handle_iphone_media(chat_data)
+        return handle_iphone_media(chat_data, language)
 
-    
