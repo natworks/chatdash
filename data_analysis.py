@@ -41,6 +41,25 @@ WEEKDAYS = [
 HOURS = [t for t in range(24)]
 CMAP = cm.get_cmap("RdYlBu")
 
+stopwords = set(STOPWORDS)
+stopwords.update(["os", "tb", "também", "sei", "para", "por", "kkkkk", "seu", "sua" "as", "mais","mesmo","hahahaha",
+                  "de", "o", "a", "se", "da", "que", "ai", "ta", "são", "aí", "q", "só", "foi", "meu", "por", "para",
+                  "e", "na", "image", "jpeg", "gif", "png", "pra", "ou", "pq", "em", "na", "e", "tem", "vc",
+                  "você", "eh", "não", "image/gif", "video/mp4", "lol", "LOL", "Yeah", "https", "haha"
+                  "pra", "é", "ma", "esse", "essa", "nao", "sim", "tá", "já", "to", "tô", "ja", "kkkkkk"
+                 "não", "mas", "eu", "uma","um", "umas", "uns", "isso","aqui", "Media", "omitted", "hahaha", 
+                  "ele", "ela", "lol", "ver", "ser", "gente", "acho", "nossa", "dele", "dela", "mais", "muito",
+                  "já", "quando", "mesmo", "depois", "ainda", "hj", "tbm", "deu", "de", "pro", "nem",
+                  "Ah", "lá", "kkkkkk", "até", "como", "bem", "mim", "desse", "dessa", "vai", "tava", "era", "tipo",
+                  "mto", "mt", "mta", "te", "vou","das", "dos", "tá", "minha", "meu", "dá", "Ahh", "faz",
+                  "rsrs", "kkk", "haha", "tenho", "quem", "estou", "ia", "sem", "kkkkkkk", "nas", "tão", "muita",
+                  "vez", "vcs", "dar", "vocês", "né", "está", "então", "nos", "nós", "viu", "ne", "num", "td",
+                  "kkkk", "sua", "seu", "ao", "esta", "fez", "imagem", "ocultada", "ocultado", "áudio",
+                  "figurinha", "omitida", "assim", "pode", "vem", "ok", "vi", "hahahahaha", "la", "bom", "vídeo",
+                  "omitido", "msm", "ir", "youtube", "youtu", "S", "Oh", "though", "tho", "well"
+                 
+                 ])
+
 
 def display_signal_analysis(chat_data: pd.DataFrame):
     pass
@@ -307,6 +326,9 @@ def display_quote(chat_data: pd.DataFrame):
             and "video" not in txt
             and "image" not in txt
             and "audio" not in txt
+            and "omitido" not in txt
+            and "omitida" not in txt
+            and "ocultado" not in txt
         ):
 
             response = requests.get(
@@ -449,3 +471,16 @@ def display_media_person(chat_data: pd.DataFrame, input_source: str):
         return handle_android_media(chat_data, language)
     else:
         return handle_iphone_media(chat_data, language)
+
+
+def generate_word_cloud(chat_data: pd.DataFrame):
+    text = " ".join(str(msg) for msg in chat_data.body)
+
+    # Generate a word cloud image
+    wc = WordCloud(stopwords=stopwords,
+                        background_color="white",
+                        width =1600, height=1000,
+                        max_words=300,
+                        colormap='magma').generate(text)
+    
+    return wc.to_image()

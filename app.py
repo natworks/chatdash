@@ -33,7 +33,7 @@ BASE_PATH = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = BASE_PATH.joinpath("data").resolve()
 
 # Read data
-default_df = pd.read_csv(DATA_PATH.joinpath("default.txt"))
+default_df = pd.read_csv(DATA_PATH.joinpath("random_generator_v2.txt"))
 
 
 def description_card():
@@ -161,12 +161,19 @@ def get_media_info(chat_df, source):
         ]
 
 
+def get_word_cloud(df):
+    wc = data_analysis.generate_word_cloud(df)
+    return html.Img(
+            src=HTML_IMG_SRC_PARAMETERS + utils.pil_to_b64(wc, enc_format="png"),
+            width="100%",
+        )
+
 def initialise_table():
     children = []
     figure, total_msgs = data_analysis.display_num_of_messages(default_df)
     children.append(
         html.Header(
-            f"Since inception, your group shared a total of {total_msgs:,} messages."
+            f"Your group has shared a total of {total_msgs:,} messages."
         )
     )
     children.append(dcc.Graph(figure=figure))
@@ -294,53 +301,94 @@ app.layout = html.Div(
                 html.H6("Total Number of Messages"),
                 html.Hr(),
                 # Overall number of messages
-                html.Div(id="group-volume-data", children=initialise_table()),
-                # Chatting behaviour w.r.t. time
-                html.Div(
+                dcc.Loading(id='loading-input-1', 
+                children=[
+                    html.Div(id="loading-output-1"),
+                    html.Div(id="group-volume-data", children=initialise_table())
+                ],
+                type="default"),
+
+                html.H6("Chatting Patterns"),
+                html.Hr(),
+
+                dcc.Loading(id='loading-input-2', 
+                children=[
+                    html.Div(id="loading-output-2"),
+                    html.Div(
                     id="chatting",
                     children=[
-                        html.H6("Chatting Patterns"),
-                        html.Hr(),
                         html.Div(
                             id="chatting-patterns", children=initialise_chatting()
                         ),
                     ],
-                ),
-                html.Div(
-                    id="emojis",
+                )],
+                type="default"),
+                
+                html.H6("Your favourite emojis"),
+                html.Hr(),
+
+                dcc.Loading(id='loading-input-3', 
+                children=[
+                    html.Div(id="loading-output-3"),
+                    html.Div(
+                        id="emojis",
+                        children=[
+                            html.Div(id="emoji-patterns", children=initialise_emojis())
+                        ]
+                    )],
+                type="default"),
+
+                html.H6("Media Sharing"),
+                html.Hr(),
+
+                dcc.Loading(id='loading-input-4', 
+                children=[
+                    html.Div(id="loading-output-4"),
+                    html.Div(id="spams",
                     children=[
-                        html.H6("Your favourite emojis"),
-                        html.Hr(),
-                        html.Div(id="emoji-patterns", children=initialise_emojis()),
-                    ],
-                ),
-                html.Div(
-                    id="spams",
-                    children=[
-                        html.H6("Media Sharing"),
-                        html.Hr(),
                         html.Div(id="media-patterns", children=initialise_media()),
-                    ],
-                ),
+                    ])],
+                type="default"),
+                
+                html.H6("Word Cloud"),
+                html.Hr(),
+                
+                dcc.Loading(id='loading-input-5', 
+                children=[
+                    html.Div(id="loading-output-5"),
+                    html.Div(id="wordcloud",
+                    children=[ 
+                        html.Div(id="word-cloud", children=get_word_cloud(default_df)),
+                    ])],
+                type="default"),
+
+                html.H6("Remember some of your messages"),
+                html.Hr(),
+
                 html.Div(
                     id="quotes",
                     children=[
-                        html.H6("Remember some of your messages"),
-                        html.Hr(),
                         html.Button(
                             "Generate New",
                             id="btn-see-media",
                             style={"margin-bottom": "20px"},
                         ),
-                        html.Div(
-                            id="quotes-div", children=initialise_quotes(default_df)
-                        ),
-                    ],
-                ),
-            ],
-        ),
-    ],
+                        dcc.Loading(
+                            id='loading-input-6', 
+                            children=[
+                                html.Div(id="loading-output-6"),
+                                html.Div(id="quotes-div", 
+                                        children=initialise_quotes(default_df)
+                            )
+                        ], type="default")
+                    ]
+                )
+            ]
+        )
+    ]
 )
+
+                        
 
 
 def get_year_dropdown(years):
@@ -452,7 +500,7 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
         figure, total_msgs = data_analysis.display_num_of_messages(data_subset)
         children.append(
             html.Header(
-                f"In {years[0]} your group shared a total of {total_msgs:,} messages."
+                f"In {years[0]} your group has shared a total of {total_msgs:,} messages."
             )
         )
         children.append(dcc.Graph(figure=figure))
@@ -466,7 +514,7 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
         figure, total_msgs = data_analysis.display_num_of_messages(chat_df)
         children.append(
             html.Header(
-                f"Since inception, your group shared a total of {total_msgs:,} messages."
+                f"Your group has shared a total of {total_msgs:,} messages."
             )
         )
         children.append(dcc.Graph(figure=figure))
@@ -484,6 +532,55 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
 
     return children, usage, emojis, media
 
+
+
+@app.callback(
+    Output("word-cloud", "children"),
+    Input("original-df", "data"),
+    Input({"type": "filter-dropdown", "index": ALL}, "value"),
+    prevent_initial_call=True
+)
+def update_word_cloud(jsonified_cleaned_data, years):
+
+    blob = json.loads(jsonified_cleaned_data)
+    chat_df = pd.read_json(blob["chat_df"], orient="split")
+
+    if years and years[0] != "All years":
+        data_subset = chat_df[chat_df["year"] == years[0]]
+        return get_word_cloud(data_subset)
+    else:
+        return get_word_cloud(chat_df)
+
+
+@app.callback(Output("loading-output-1", "children"), Input("loading-input-1", "loading_state"))
+def input_triggers_spinner(value):
+    time.sleep(1)
+    return value
+
+@app.callback(Output("loading-output-2", "children"), Input("loading-input-2", "loading_state"))
+def input_triggers_spinner(value):
+    time.sleep(1)
+    return value
+
+@app.callback(Output("loading-output-3", "children"), Input("loading-input-3", "loading_state"))
+def input_triggers_spinner(value):
+    time.sleep(1)
+    return value
+
+@app.callback(Output("loading-output-4", "children"), Input("loading-input-4", "loading_state"))
+def input_triggers_spinner(value):
+    time.sleep(1)
+    return value
+
+@app.callback(Output("loading-output-5", "children"), Input("loading-input-5", "loading_state"))
+def input_triggers_spinner(value):
+    time.sleep(1)
+    return value
+
+@app.callback(Output("loading-output-6", "children"), Input("loading-input-6", "loading_state"))
+def input_triggers_spinner(value):
+    time.sleep(1)
+    return value
 
 @app.callback(
     Output("quotes-div", "children"),
