@@ -11,6 +11,7 @@ import plotly
 from matplotlib import cm
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.figure_factory as ff
 
 import data_cleaning
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
@@ -309,10 +310,13 @@ def display_quote(chat_data: pd.DataFrame):
         "./fonts/philosopher/Philosopher-BoldItalic.ttf", 32, encoding="unic"
     )
 
+    body_idx = chat_data.columns.get_loc("body")
+    author_idx = chat_data.columns.get_loc("author")
+
     while count < 3:
         i = np.random.randint(0, chat_data.shape[0], size=1)[0]
-        txt = "'{}'".format(chat_data.iloc[i, chat_data.columns.get_loc("body")])
-        author = chat_data.iloc[i, chat_data.columns.get_loc("author")]
+        txt = "'{}'".format(chat_data.iloc[i, body_idx])
+        author = chat_data.iloc[i, author_idx]
 
         if (
             5 < len(txt) < 200
@@ -335,10 +339,10 @@ def display_quote(chat_data: pd.DataFrame):
                 token_response_data[count]["urls"]["raw"] + "&w=600"
             )
             images[count] = Image.open(BytesIO(response.content))
-            captions[count] = "Original Image by: {} ({}) from Unsplash".format(
+            captions[count] = [
                 token_response_data[count]["user"]["name"],
-                token_response_data[count]["user"]["links"]["html"].split("/")[-1],
-            )
+                token_response_data[count]["user"]["links"]["html"].split("/")[-1]
+            ]
 
             d = ImageDraw.Draw(images[count])
             width, height = images[count].size
@@ -484,3 +488,36 @@ def generate_word_cloud(chat_data: pd.DataFrame):
                         colormap='magma').generate(text)
     
     return wc.to_image()
+
+
+def get_first_responders(chat_data: pd.DataFrame, authors: list = None):
+
+    if authors is None:
+        authors = list(chat_data['author'].unique())
+
+    responder_matrix = np.zeros((len(authors), len(authors)))
+    authors_id = {name: idx for idx, name in enumerate(authors)}
+
+    col_id = chat_data.columns.get_loc('author')
+
+    for author_idx, author in enumerate(authors):
+        indices = chat_data[chat_data['author'] == author].index.values.astype(int)
+        for idx in indices:
+            if idx < chat_data.shape[0]-2:
+                responder = chat_data.iloc[idx+1, col_id]
+                if responder != author:
+                    responder_matrix[author_idx][authors_id[responder]] += 1
+
+    total_replied_msgs = np.sum(responder_matrix, axis=0)
+    total_replied_msgs[np.where(total_replied_msgs == 0.)] = 1e-3
+    data = (responder_matrix/total_replied_msgs.reshape(-1,1))*100
+    z_text = np.around(data, decimals=2) 
+
+    names = [n.replace("+", "Num: +") for n in authors]
+
+    fig = ff.create_annotated_heatmap(data, x=names, y= names, annotation_text=z_text, colorscale='blues',
+                                  hoverinfo='z')
+    fig.update_xaxes(side="bottom", title={"text": "First Person to Respond"})
+    fig.update_yaxes(title={"text": "Sender"})
+
+    return fig

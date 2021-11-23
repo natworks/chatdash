@@ -183,6 +183,10 @@ def initialise_table():
 def initialise_chatting():
     return get_usage_plots(default_df)
 
+def initialise_responder(df):
+    fig = data_analysis.get_first_responders(df)
+    return dcc.Graph(figure=fig)
+
 
 def initialise_emojis():
     return get_emojis(default_df)
@@ -204,7 +208,14 @@ def initialise_quotes(df):
             width="100%",
         ),
         html.Caption(
-            captions[0],
+            children=[
+                f"Original Image by: {captions[0][0]} ",
+                html.A(
+                    f"({captions[0][1]}) ",
+                    href=f"https://unsplash.com/{captions[0][1]}",
+                    ),
+                "from Unsplash"
+            ],
             style={
                 "display": "block",
                 "margin-left": "auto",
@@ -220,7 +231,14 @@ def initialise_quotes(df):
             width="100%",
         ),
         html.Caption(
-            captions[1],
+            children=[
+                f"Original Image by: {captions[1][0]} ",
+                html.A(
+                    f"({captions[1][1]}) ",
+                    href=f"https://unsplash.com/{captions[1][1]}",
+                    ),
+                "from Unsplash"
+            ],
             style={
                 "display": "block",
                 "margin-left": "auto",
@@ -236,7 +254,14 @@ def initialise_quotes(df):
             width="100%",
         ),
         html.Caption(
-            captions[2],
+            children=[
+                f"Original Image by: {captions[2][0]} ",
+                html.A(
+                    f"({captions[2][1]})",
+                    href=f"https://unsplash.com/{captions[2][1]}",
+                    ),
+                " from Unsplash"
+            ],
             style={
                 "display": "block",
                 "margin-left": "auto",
@@ -323,7 +348,23 @@ app.layout = html.Div(
                     ],
                 )],
                 type="default"),
+
+                html.H6("First Responder"),
+                html.Hr(),
+                html.P("This heatmap shows what percentage of the sender's messages was first replied by each of the group members"),
                 
+                dcc.Loading(id='loading-input-8', 
+                children=[
+                    html.Div(id="loading-output-8"),
+                    html.Div(
+                        id="responders",
+                        children=[
+                            html.Div(id="responding-patterns", children=initialise_responder(default_df))
+                        ]
+                    )],
+                type="default"),
+
+
                 html.H6("Your favourite emojis"),
                 html.Hr(),
 
@@ -470,6 +511,7 @@ def load_data(contents):
 @app.callback(
     Output("group-volume-data", "children"),
     Output("chatting-patterns", "children"),
+    Output("responding-patterns", "children"),
     Output("emoji-patterns", "children"),
     Output("media-patterns", "children"),
     Input("original-df", "data"),
@@ -507,6 +549,8 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
 
         usage = get_usage_plots(data_subset)
         emojis = get_emojis(data_subset)
+        data_subset.reset_index(inplace=True)
+        responder = dcc.Graph(figure=data_analysis.get_first_responders(data_subset))
         media = get_biggest_spammer(
             data_subset, time_frame=f" in {years[0]}."
         ) + get_media_info(data_subset, source=blob["input_source"])
@@ -526,11 +570,12 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
 
         usage = get_usage_plots(chat_df)
         emojis = get_emojis(chat_df)
+        responder = dcc.Graph(figure=data_analysis.get_first_responders(chat_df))
         media = get_biggest_spammer(chat_df, time_frame=".") + get_media_info(
             chat_df, source=blob["input_source"]
         )
 
-    return children, usage, emojis, media
+    return children, usage, responder, emojis, media
 
 
 
@@ -578,6 +623,11 @@ def input_triggers_spinner(value):
     return value
 
 @app.callback(Output("loading-output-6", "children"), Input("loading-input-6", "loading_state"))
+def input_triggers_spinner(value):
+    time.sleep(1)
+    return value
+
+@app.callback(Output("loading-output-8", "children"), Input("loading-input-8", "loading_state"))
 def input_triggers_spinner(value):
     time.sleep(1)
     return value
