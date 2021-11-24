@@ -19,6 +19,17 @@ import data_analysis
 # Variables
 HTML_IMG_SRC_PARAMETERS = "data:image/png;base64, "
 
+BASE_CSS = {
+  "padding": "0 18px",
+  "max-height": "0",
+  "overflow": "hidden",
+  "transition": "max-height 0.2s ease-out",
+  "background-color": "#f1f1f1"
+}
+SHOWY_CSS = BASE_CSS.copy()
+SHOWY_CSS["max-height"] = "300px"
+
+
 app = dash.Dash(
     __name__,
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
@@ -43,7 +54,6 @@ def description_card():
     return html.Div(
         id="description-card",
         children=[
-            # html.H5("Chat Analysis"),
             html.H5("Welcome to the ChatDash"),
             html.Div(
                 id="intro",
@@ -53,12 +63,40 @@ def description_card():
                         "exported from WhatsApp",
                         href="https://faq.whatsapp.com/android/chats/how-to-save-your-chat-history/?lang=en",
                     ),
-                    " and ChatDash will analyse it for you. On the right, you can see a demo of what the analysis will look like.",
-                ],
+                    " and ChatDash will analyse it for you. On the right, you can see a demo of what the analysis will look like."
+                    ]
             ),
-        ],
+        ]
     )
 
+def get_faq():
+
+    return html.Div(className="faq-wrapper", 
+    children=[
+        html.Div(
+                # className="faq",
+                children=[
+                    html.H5("FAQ"),
+                    html.Button("How can I export my WhatsApp group chat?", n_clicks=0, className="collapsible", id="fqa-b1"),
+                    html.Div(className="content", children=[
+                        html.P("Open the individual or group chat > Tap More options > More > Export chat. We recommend exporting without media."),
+                    ], id="bt1-child"),
+                    html.Button("Is my chat data stored anywhere?", n_clicks=0, className="collapsible", id="fqa-b2"),
+                    html.Div(className="content", children=[
+                        html.P("No! Everything runs locally in your browser and no data sent to a server. If you don't want to take my word for it, the code is freely available on github"),
+                    ], id="bt2-child"),
+                    html.Button("Does it only work for data from WhatsApp?", n_clicks=0, className="collapsible", id="fqa-b3"),
+                    html.Div(className="content", children=[
+                        html.P("As far as I know, yes. It has not been tested on data from any other platform."),
+                    ], id="bt3-child"),
+                    html.Button(children=["Things don't work. Where can I complain?"], n_clicks=0, className="collapsible", id="fqa-b4"),
+                    html.Div(className="content", children=[
+                        html.P("You may yell at me on @twitter or just email me @"),
+                    ], id="bt4-child")
+                ]
+        )
+    ]
+)
 
 def get_usage_plots(chat_df):
     author_names = list(chat_df["author"].unique())
@@ -282,7 +320,6 @@ def generate_control_card():
     return html.Div(
         id="control-card",
         children=[
-            # html.P("Upload chat .txt file"),
             dcc.Upload(
                 id="upload-data",
                 children=html.Div(["Drag and Drop or ", html.A("chat file")]),
@@ -311,7 +348,7 @@ app.layout = html.Div(
         html.Div(
             id="left-column",
             className="four columns",
-            children=[description_card(), generate_control_card()]
+            children=[description_card(), generate_control_card(), get_faq()]
             + [
                 html.Div(
                     ["initial child"], id="output-clientside", style={"display": "none"}
@@ -646,6 +683,27 @@ def display_quotes(jsonified_cleaned_data, click):
         blob = json.loads(jsonified_cleaned_data)
         chat_df = pd.read_json(blob["chat_df"], orient="split")
         return initialise_quotes(chat_df)
+
+
+@app.callback(
+    Output("bt1-child", "style"),
+    Output("bt2-child", "style"),
+    Output("bt3-child", "style"),
+
+    Input("fqa-b1", "n_clicks"),
+    Input("fqa-b2", "n_clicks"),
+    Input("fqa-b3", "n_clicks"),
+
+    prevent_initial_call=True
+)
+def control_faq(btn1, btn2, btn3):
+
+    style1 = SHOWY_CSS if btn1 % 2 == 1 else BASE_CSS
+    style2 = SHOWY_CSS if btn2 % 2 == 1 else BASE_CSS
+    style3 = SHOWY_CSS if btn3 % 2 == 1 else BASE_CSS
+
+    return style1, style2, style3
+    
 
 
 # Run the server

@@ -73,7 +73,7 @@ Header {
     min-height: calc(100vh - 5.5rem);
 }
 
-.table-row {
+/* .table-row {
     height: 63px;
     vertical-align: middle;
     font-size: 13px;
@@ -86,7 +86,7 @@ Header {
 
 .draglayer {
     cursor: pointer !important;
-}
+} */
 
 #intro {
     margin: 20px 0px;
@@ -94,7 +94,38 @@ Header {
     text-align: justify;
 }
 
-#control-card > p {
+#faq {
+    margin: 20px 0px;
+    font-family: "Helvetica Neue", sans-serif;
+    text-align: left;
+    display: table;
+    word-wrap: break-word;
+}
+
+.faq-wrapper {
+    /* margin: 20px 0px; */
+    width: 100%;
+    position: relative;
+    /* background-color: red; */
+    /* word-wrap: break-word; */
+}
+  
+.faq {
+    /* padding: 10px 10px 10px 10px;
+    margin: 10px 10px; */
+    /* background-color: grey;
+    bottom: 0px;
+    box-sizing: border-box;
+    position: absolute;
+    left: 0;
+    right: 0; */
+}
+
+/* #faq{
+    display: block;
+} */
+
+/* #control-card > p {
     font-weight: bold;
 }
 
@@ -107,17 +138,17 @@ Header {
 
 #patient_volume_card > b, #wait_time_card > b {
     line-height: 2.5;
-}
+} */
 
-#wait_time_card {
+/* #wait_time_card {
     margin: 20px 0px;
 }
 
 #patient_volume_hm {
     height: 400px;
-}
+} */
 
-.table-row:nth-child(even) {
+/* .table-row:nth-child(even) {
     background-color: #f2f2f2;
 }
 
@@ -133,7 +164,7 @@ Header {
 #header_wait_time_min > b, #header_care_score > b {
     display: table-cell;
     vertical-align: middle;
-}
+} */
 
 
 /*
@@ -163,6 +194,10 @@ Header {
         margin: 10px 0px;
     }
 
+    #faq{
+        margin: 10px 0px;
+    }
+
     #left-column, #right-column {
         width: 100%;
         margin-left: 0px;
@@ -172,7 +207,7 @@ Header {
         padding: 0rem 0.5rem;
     }
 
-    #reset-btn-outer {
+    /* #reset-btn-outer {
         text-align: center;
     }
 
@@ -184,13 +219,13 @@ Header {
 
     .table-row:nth-child(even), .table-row:nth-child(odd) {
         background-color: #FFFFFF;
-    }
+    } */
 
     #header {
         display: none;
     }
 
-    #wait_time_table:after {
+    /* #wait_time_table:after {
         content: "";
         display: table;
         clear: both;
@@ -205,6 +240,50 @@ Header {
 
     .annotation-text {
         font-size: 0.8rem !important;
-    }
+    } */
 
+}
+
+.collapsible {
+    background-color: #f8f9fa;
+    color: black;
+    cursor: pointer;
+    /* position: absolute; */
+    width: 100%;
+    max-width: 100%;
+    word-wrap: break-word;
+    left: 0;
+    right: 0;
+    text-align: left;
+    /* overflow-wrap: break-word; */
+    margin-left: 0;
+    padding-left: 2%;
+    white-space: normal;
+    height: auto;
+    font-size: 0.5.rem;
+}
+  
+.active, .collapsible:hover {
+    background-color: #1e6091;
+    color: white;
+} 
+
+.collapsible:before {
+    content: '\002B';
+    color: black;
+    font-weight: bold;
+    float: right;
+    margin-left: 5px;
+}
+
+.active:after {
+content: "\2212";   
+}
+  
+.content {
+padding: 0 18px;
+max-height: 0;
+overflow: hidden;
+transition: max-height 0.2s ease-out;
+background-color: #f1f1f1;
 }
