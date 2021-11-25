@@ -58,12 +58,12 @@ def preprocess_input_data(chat_file, year="2021"):
 
     chat = pd.DataFrame.from_dict(dict_file)
 
-    return chat, input_source  # [chat['year']== year], input_source
+    return chat, input_source  
 
 
-# @st.cache(allow_output_mutation=True)
 def process_data(lines, formatting="android"):
     dict_file = {
+        "datetime": [],
         "day_of_month": [],
         "weekday": [],
         "month": [],
@@ -89,7 +89,8 @@ def process_data(lines, formatting="android"):
 
         if date_info is not None and has_author is not None:
             date = datetime.strptime(date_info.group(1)[:-1].strip(), hour_pattern)
-
+            
+            dict_file["datetime"].append(date),
             dict_file["day_of_month"].append(str(date.day))
             dict_file["weekday"].append(WEEKDAYS[date.weekday()])
             dict_file["month"].append(MONTHS[date.month])

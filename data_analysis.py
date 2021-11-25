@@ -3,7 +3,6 @@ import requests
 import numpy as np
 import pandas as pd
 from io import BytesIO
-from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 
 import emoji
@@ -14,7 +13,7 @@ import plotly.graph_objects as go
 import plotly.figure_factory as ff
 
 import data_cleaning
-from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
+from wordcloud import WordCloud, STOPWORDS
 
 MONTHS = [
     "January",
@@ -66,67 +65,43 @@ def display_signal_analysis(chat_data: pd.DataFrame):
     pass
 
 
-def get_date(row_idx, chat_data):
-    date = datetime.strptime(
-        "{}:{} {} {} {}".format(
-            chat_data.iloc[row_idx, chat_data.columns.get_loc("hour_of_day")],
-            chat_data.iloc[row_idx, chat_data.columns.get_loc("minute_of_hour")],
-            chat_data.iloc[row_idx, chat_data.columns.get_loc("day_of_month")],
-            chat_data.iloc[row_idx, chat_data.columns.get_loc("month")],
-            chat_data.iloc[row_idx, chat_data.columns.get_loc("year")],
-        ),
-        "%H:%M %d %B %Y",
-    )
-    return date
+def get_busiest_day(chat_data: pd.DataFrame):
+    unique_days = [[date, len(counts)] for date, counts in chat_data.groupby(['day_of_month', 'month', 'year']).groups.items()]
+    count = [info[1] for info in unique_days]
+    idx = count.index(max(count))
+    return unique_days[idx]
 
 
-def get_quietest_interval(chat_data):
-    deltas = [0]
-    previous_date = get_date(0, chat_data)
+def get_gap_string(timedelta):
 
-    for i in range(1, chat_data.shape[0]):
-        current_date = get_date(i, chat_data)
-        deltas.append((current_date - previous_date).total_seconds())
-        previous_date = current_date
+    days = timedelta.days
+    hours = timedelta.components.hours
+    minutes = timedelta.components.minutes
+    seconds = timedelta.components.seconds
 
-    quiest_interval = max(deltas)
-    return deltas.index(quiest_interval), quiest_interval
-
-
-def convert_seconds(seconds):
-    day = int(seconds // (24 * 3600))
-    time = seconds % (24 * 3600)
-    hour = int(time // 3600)
-    time %= 3600
-    minutes = int(time // 60)
-    time %= 60
-    seconds = int(time)
-
-    if day > 0:
-        return "{} days {} hours and {} minutes".format(day, hour, minutes)
-    elif hour > 0:
-        return "{} hours and {} minutes".format(hour, minutes)
+    if days > 0:
+        return "{} days {} hours {} minutes and {} seconds".format(days, hours, minutes, seconds)
+    elif hours > 0:
+        return "{} hours {} minutes and {} seconds".format(hours, minutes, seconds)
     elif minutes > 0:
-        return "{} minutes".format(minutes)
+        return "{} minutes and {} seconds".format(minutes, seconds)
     else:
         return "{} seconds".format(seconds)
 
 
-def display_msg_gap(chat_data: pd.DataFrame):
+def get_biggest_msg_gap(chat_data: pd.DataFrame):
 
-    daily_average = chat_data.shape[0] // 365
-    quiest_interval_id, delta_in_seconds = get_quietest_interval(chat_data)
-    formatted_time = convert_seconds(delta_in_seconds)
-    interval_start = "{} of {}".format(
-        chat_data.iloc[
-            quiest_interval_id - 1, chat_data.columns.get_loc("day_of_month")
-        ],
-        chat_data.iloc[quiest_interval_id - 1, chat_data.columns.get_loc("month")],
-    )
-    interval_end = "{} of {}".format(
-        chat_data.iloc[quiest_interval_id, chat_data.columns.get_loc("day_of_month")],
-        chat_data.iloc[quiest_interval_id, chat_data.columns.get_loc("month")],
-    )
+    time_differences = chat_data['datetime'].diff()
+    timedelta = time_differences.max()
+
+    formatted_time = get_gap_string(timedelta)
+
+    idx = time_differences.idxmax()
+
+    gap_start = chat_data.iloc[idx-1, :]
+    gap_end = chat_data.iloc[idx, :]
+
+    return formatted_time, gap_start, gap_end
 
 
 def display_num_of_messages(chat_data: pd.DataFrame, per_year: bool = False):

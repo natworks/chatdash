@@ -6,11 +6,11 @@ from dash.dependencies import Input, Output, State, ALL
 import json
 import time
 import base64
-from dash.html.Span import Span
-import emoji
-import pandas as pd
-from io import BytesIO as _BytesIO
 import pathlib
+import pandas as pd
+from calendar import isleap
+from datetime import datetime, timezone
+
 
 import utils
 import data_cleaning
@@ -44,7 +44,7 @@ BASE_PATH = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = BASE_PATH.joinpath("data").resolve()
 
 # Read data
-default_df = pd.read_csv(DATA_PATH.joinpath("random_generator_v2.txt"))
+default_df = pd.read_csv(DATA_PATH.joinpath("random_generator_v3.txt"), parse_dates=[0])
 
 
 def description_card():
@@ -206,6 +206,56 @@ def get_word_cloud(df):
             width="100%",
         )
 
+def _day_text(number):
+
+    day = '1st' if number == '1' else f'{number}th'
+    day = '2nd' if number == '2' else f'{number}th'
+    day = '3rd' if number == '3' else f'{number}th'
+
+    return day
+
+
+def get_busiest_day(df, years):
+    date, msg_count = data_analysis.get_busiest_day(df)
+    time_gap_text, gap_start, gap_end = data_analysis.get_biggest_msg_gap(df)
+    
+    day = _day_text(str(date[0]))
+
+    right_now = datetime.now(tz=None)
+    print(right_now, df.iloc[0,df.columns.get_loc('datetime')].replace(tzinfo=None))
+    if years == 'All years' or years == str(right_now.year):
+        days_so_far = (right_now - df.iloc[0,df.columns.get_loc('datetime')].replace(tzinfo=None)).days
+    else:
+        days_so_far = 366 if isleap(int(years)) else 365
+
+    if years == 'All years':
+        return html.Header(
+            children=["It has been ",
+            html.Span(f"{days_so_far}", style={"font-size": "16px", "font-weight": "bold"}),
+            " days since the first available message in this group. That is an average of ",
+            html.Span(f"{df.shape[0]//days_so_far} messages", style={"font-size": "16px", "font-weight": "bold"}),
+            f" per day. The quiest period happened between the {_day_text(str(gap_start['day_of_month']))} of {gap_start['month']} \
+             of {gap_start['year']} and the {_day_text(str(gap_end['day_of_month']))} of {gap_end['month']} of {gap_end['year']}, a total of ",
+            html.Span(f"{time_gap_text}", style={"font-size": "16px", "font-weight": "bold"}),
+            f". The busiest day has been the {day} of {date[1]} of {date[2]} when a total of ",
+            html.Span(f"{msg_count}", style={"font-size": "16px", "font-weight": "bold"}),
+            " messages were sent."]
+        )
+    else:
+        return html.Header(
+            children=[
+            "In ", html.Span(f"{years}", style={"font-size": "16px", "font-weight": "bold"}),
+            " your group shared an average of ",
+            html.Span(f"{df.shape[0]//days_so_far} messages", style={"font-size": "16px", "font-weight": "bold"}),
+            f" per day. The quiest period happened between the {_day_text(str(gap_start['day_of_month']))} of {gap_start['month']} \
+             of {gap_start['year']} and the {_day_text(str(gap_end['day_of_month']))} of {gap_end['month']} of {gap_end['year']}, a total of ",
+            html.Span(f"{time_gap_text}", style={"font-size": "16px", "font-weight": "bold"}),
+            f". The busiest day was the {day} of {date[1]} of {date[2]} when a total of ",
+            html.Span(f"{msg_count}", style={"font-size": "16px", "font-weight": "bold"}),
+            " messages were sent."]
+        )
+
+    
 def initialise_table():
     children = []
     figure, total_msgs = data_analysis.display_num_of_messages(default_df)
@@ -366,10 +416,12 @@ app.layout = html.Div(
                 dcc.Loading(id='loading-input-1', 
                 children=[
                     html.Div(id="loading-output-1"),
-                    html.Div(id="group-volume-data", children=initialise_table())
+                    html.Div(id="group-volume-data", children=initialise_table()),
+                    html.Div(id="unique_days", children=get_busiest_day(default_df, "All years")),
                 ],
                 type="default"),
 
+                html.Br(),
                 html.H6("Chatting Patterns"),
                 html.Hr(),
 
@@ -547,6 +599,7 @@ def load_data(contents):
 
 @app.callback(
     Output("group-volume-data", "children"),
+    Output("unique_days", "children"),
     Output("chatting-patterns", "children"),
     Output("responding-patterns", "children"),
     Output("emoji-patterns", "children"),
@@ -587,6 +640,7 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
         usage = get_usage_plots(data_subset)
         emojis = get_emojis(data_subset)
         data_subset.reset_index(inplace=True)
+        unique_days = get_busiest_day(data_subset, years[0])
         responder = dcc.Graph(figure=data_analysis.get_first_responders(data_subset))
         media = get_biggest_spammer(
             data_subset, time_frame=f" in {years[0]}."
@@ -606,13 +660,14 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
             children.append(dcc.Graph(figure=yearly_breakdown))
 
         usage = get_usage_plots(chat_df)
+        unique_days = get_busiest_day(chat_df, "All years")
         emojis = get_emojis(chat_df)
         responder = dcc.Graph(figure=data_analysis.get_first_responders(chat_df))
         media = get_biggest_spammer(chat_df, time_frame=".") + get_media_info(
             chat_df, source=blob["input_source"]
         )
 
-    return children, usage, responder, emojis, media
+    return children, unique_days, usage, responder, emojis, media
 
 
 
