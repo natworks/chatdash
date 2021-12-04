@@ -7,58 +7,16 @@ from PIL import Image, ImageDraw, ImageFont
 
 import emoji
 import plotly
-from matplotlib import cm
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
+from wordcloud import WordCloud
 
+import utils
 import data_cleaning
-from wordcloud import WordCloud, STOPWORDS
 
-MONTHS = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-]
-WEEKDAYS = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-]
-HOURS = [t for t in range(24)]
-CMAP = cm.get_cmap("RdYlBu")
-
-stopwords = set(STOPWORDS)
-stopwords.update(["os", "tb", "também", "sei", "para", "por", "kkkkk", "seu", "sua" "as", "mais","mesmo","hahahaha",
-                  "de", "o", "a", "se", "da", "que", "ai", "ta", "são", "aí", "q", "só", "foi", "meu", "por", "para",
-                  "e", "na", "image", "jpeg", "gif", "png", "pra", "ou", "pq", "em", "na", "e", "tem", "vc",
-                  "você", "eh", "não", "image/gif", "video/mp4", "lol", "LOL", "Yeah", "https", "haha"
-                  "pra", "é", "ma", "esse", "essa", "nao", "sim", "tá", "já", "to", "tô", "ja", "kkkkkk"
-                 "não", "mas", "eu", "uma","um", "umas", "uns", "isso","aqui", "Media", "omitted", "hahaha", 
-                  "ele", "ela", "lol", "ver", "ser", "gente", "acho", "nossa", "dele", "dela", "mais", "muito",
-                  "já", "quando", "mesmo", "depois", "ainda", "hj", "tbm", "deu", "de", "pro", "nem",
-                  "Ah", "lá", "kkkkkk", "até", "como", "bem", "mim", "desse", "dessa", "vai", "tava", "era", "tipo",
-                  "mto", "mt", "mta", "te", "vou","das", "dos", "tá", "minha", "meu", "dá", "Ahh", "faz",
-                  "rsrs", "kkk", "haha", "tenho", "quem", "estou", "ia", "sem", "kkkkkkk", "nas", "tão", "muita",
-                  "vez", "vcs", "dar", "vocês", "né", "está", "então", "nos", "nós", "viu", "ne", "num", "td",
-                  "kkkk", "sua", "seu", "ao", "esta", "fez", "imagem", "ocultada", "ocultado", "áudio",
-                  "figurinha", "omitida", "assim", "pode", "vem", "ok", "vi", "hahahahaha", "la", "bom", "vídeo",
-                  "omitido", "msm", "ir", "youtube", "youtu", "S", "Oh", "though", "tho", "well"
-                 
-                 ])
+with open("./key.txt", "r") as f:
+    ACCESS_KEY = f.read()
 
 
 def display_signal_analysis(chat_data: pd.DataFrame):
@@ -66,7 +24,12 @@ def display_signal_analysis(chat_data: pd.DataFrame):
 
 
 def get_busiest_day(chat_data: pd.DataFrame):
-    unique_days = [[date, len(counts)] for date, counts in chat_data.groupby(['day_of_month', 'month', 'year']).groups.items()]
+    unique_days = [
+        [date, len(counts)]
+        for date, counts in chat_data.groupby(
+            ["day_of_month", "month", "year"]
+        ).groups.items()
+    ]
     count = [info[1] for info in unique_days]
     idx = count.index(max(count))
     return unique_days[idx]
@@ -77,28 +40,25 @@ def get_gap_string(timedelta):
     days = timedelta.days
     hours = timedelta.components.hours
     minutes = timedelta.components.minutes
-    seconds = timedelta.components.seconds
 
     if days > 0:
-        return "{} days {} hours {} minutes and {} seconds".format(days, hours, minutes, seconds)
+        return "{} days {} hours and {} minutes".format(days, hours, minutes)
     elif hours > 0:
-        return "{} hours {} minutes and {} seconds".format(hours, minutes, seconds)
+        return "{} hours and {} minutes".format(hours, minutes)
     elif minutes > 0:
-        return "{} minutes and {} seconds".format(minutes, seconds)
-    else:
-        return "{} seconds".format(seconds)
+        return "{} minutes".format(minutes)
 
 
 def get_biggest_msg_gap(chat_data: pd.DataFrame):
 
-    time_differences = chat_data['datetime'].diff()
+    time_differences = chat_data["datetime"].diff()
     timedelta = time_differences.max()
 
     formatted_time = get_gap_string(timedelta)
 
     idx = time_differences.idxmax()
 
-    gap_start = chat_data.iloc[idx-1, :]
+    gap_start = chat_data.iloc[idx - 1, :]
     gap_end = chat_data.iloc[idx, :]
 
     return formatted_time, gap_start, gap_end
@@ -143,7 +103,9 @@ def display_num_of_messages(chat_data: pd.DataFrame, per_year: bool = False):
 
 def get_frequency_info(chat_data, column, column_renamed, sorting_order, author_names):
     c_gaps = [
-        (np.asarray(CMAP((i + 1) / len(author_names))[:-1]) * 255).astype(np.uint8)
+        (np.asarray(utils.CMAP((i + 1) / len(author_names))[:-1]) * 255).astype(
+            np.uint8
+        )
         for i in range(len(author_names))
     ]
     markers = ["rgb({}, {}, {})".format(e[0], e[1], e[2]) for e in c_gaps]
@@ -174,7 +136,7 @@ def get_frequency_info(chat_data, column, column_renamed, sorting_order, author_
         data.append(
             go.Bar(
                 name=author,
-                x=ordered_data,
+                x=[str(e) for e in ordered_data],
                 y=list(sorted_data["Messages"]),
                 marker_color=markers[c],
             )
@@ -275,8 +237,7 @@ def display_quote(chat_data: pd.DataFrame):
     count = 0
     images = {}
     captions = {}
-    
-    url = f"https://api.unsplash.com/photos/random/?topics=='nature'&count=3&orientation=landscape&client_id={YOUR_ACCESS_KEY}"
+    url = f"https://api.unsplash.com/photos/random/?topics=='nature'&count=3&orientation=landscape&client_id={ACCESS_KEY}"
 
     r = requests.get(url)  # , data=token_data, headers=token_headers)
     token_response_data = r.json()
@@ -316,7 +277,7 @@ def display_quote(chat_data: pd.DataFrame):
             images[count] = Image.open(BytesIO(response.content))
             captions[count] = [
                 token_response_data[count]["user"]["name"],
-                token_response_data[count]["user"]["links"]["html"].split("/")[-1]
+                token_response_data[count]["user"]["links"]["html"].split("/")[-1],
             ]
 
             d = ImageDraw.Draw(images[count])
@@ -442,56 +403,68 @@ def handle_iphone_media(chat_data: pd.DataFrame, language: str):
 
 
 def display_media_person(chat_data: pd.DataFrame, input_source: str):
-    body = " ".join(str(msg) for msg in chat_data.body)
-    language = "pt" if "omitida" in body else "en"
+
     if input_source == "signal":
         return handle_signal_media(chat_data)
-    elif input_source == "android":
-        return handle_android_media(chat_data, language)
     else:
-        return handle_iphone_media(chat_data, language)
+        body = " ".join(str(msg) for msg in chat_data.body)
+        language = "pt" if "omitida" in body else "en"
+
+        if "Mídia omitida" in body or "<Media omitted>" in body:
+            return handle_android_media(chat_data, language)
+        else:
+            return handle_iphone_media(chat_data, language)
 
 
 def generate_word_cloud(chat_data: pd.DataFrame):
     text = " ".join(str(msg) for msg in chat_data.body)
 
     # Generate a word cloud image
-    wc = WordCloud(stopwords=stopwords,
-                        background_color="white",
-                        width =1600, height=1000,
-                        max_words=300,
-                        colormap='magma').generate(text)
-    
+    wc = WordCloud(
+        stopwords=utils.stopwords,
+        background_color="white",
+        width=1600,
+        height=1000,
+        max_words=300,
+        colormap="magma",
+    ).generate(text)
+
     return wc.to_image()
 
 
 def get_first_responders(chat_data: pd.DataFrame, authors: list = None):
 
     if authors is None:
-        authors = list(chat_data['author'].unique())
+        authors = list(chat_data["author"].unique())
 
     responder_matrix = np.zeros((len(authors), len(authors)))
     authors_id = {name: idx for idx, name in enumerate(authors)}
 
-    col_id = chat_data.columns.get_loc('author')
+    col_id = chat_data.columns.get_loc("author")
 
     for author_idx, author in enumerate(authors):
-        indices = chat_data[chat_data['author'] == author].index.values.astype(int)
+        indices = chat_data[chat_data["author"] == author].index.values.astype(int)
         for idx in indices:
-            if idx < chat_data.shape[0]-2:
-                responder = chat_data.iloc[idx+1, col_id]
+            if idx < chat_data.shape[0] - 2:
+                responder = chat_data.iloc[idx + 1, col_id]
                 if responder != author:
                     responder_matrix[author_idx][authors_id[responder]] += 1
 
     total_replied_msgs = np.sum(responder_matrix, axis=0)
-    total_replied_msgs[np.where(total_replied_msgs == 0.)] = 1e-3
-    data = (responder_matrix/total_replied_msgs.reshape(-1,1))*100
-    z_text = np.around(data, decimals=2) 
+    total_replied_msgs[np.where(total_replied_msgs == 0.0)] = 1e-3
+    data = (responder_matrix / total_replied_msgs.reshape(-1, 1)) * 100
+    z_text = np.around(data, decimals=2)
 
     names = [n.replace("+", "Num: +") for n in authors]
 
-    fig = ff.create_annotated_heatmap(data, x=names, y= names, annotation_text=z_text, colorscale='blues',
-                                  hoverinfo='z')
+    fig = ff.create_annotated_heatmap(
+        data,
+        x=names,
+        y=names,
+        annotation_text=z_text,
+        colorscale="blues",
+        hoverinfo="z",
+    )
     fig.update_xaxes(side="bottom", title={"text": "First Person to Respond"})
     fig.update_yaxes(title={"text": "Sender"})
 

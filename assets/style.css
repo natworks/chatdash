@@ -20,25 +20,28 @@ hr {
     margin: 0.3rem 0rem;
 }
 
-.banner {
-    height: 5.5rem;
+.footer {
+    height: 3.rem;
     padding: 0rem 2rem 0rem;
-    background-color: white;
+    background-color: #f9f9f9;
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    text-align: center;
 }
-
-.banner Img {
-    position: relative;
-    height: 3rem;
-    width: auto;
-    margin-left: 2%;
+.footer P {
+    text-align: center;
+    display: block;
 }
-
-/* .button {
-    transition-duration: 0.4s;
-  } */
+.footer A {
+    color: #333333;
+    text-decoration: none;
+}
+.footer A:hover{
+    color: #d00000;
+}
 
 #btn-see-media:hover {
     background-color: #2c8cff;
@@ -52,6 +55,10 @@ H5 {
 
 H5, H3 {
     font-family: Acumin, "Helvetica Neue", sans-serif;
+}
+
+H6 {
+    font-size: 4rem;
 }
 
 Header {
@@ -68,25 +75,11 @@ Header {
 }
 
 #right-column {
+    font-size: 17px;
     background-color: #FFFFFF;
     padding: 0rem 2rem;
     min-height: calc(100vh - 5.5rem);
 }
-
-/* .table-row {
-    height: 63px;
-    vertical-align: middle;
-    font-size: 13px;
-}
-
-.wait_time_graph > div, .patient_score_graph > div {
-    height: 100% !important;
-    width: 100% !important;
-}
-
-.draglayer {
-    cursor: pointer !important;
-} */
 
 #intro {
     margin: 20px 0px;
@@ -121,56 +114,9 @@ Header {
     right: 0; */
 }
 
-/* #faq{
-    display: block;
-} */
-
-/* #control-card > p {
-    font-weight: bold;
-}
-
-#patient_volume_card, #wait_time_card {
-    background-color: #FFFFFF;
-    padding: 1rem;
-    margin: auto;
-    margin-top: 20px;
-}
-
-#patient_volume_card > b, #wait_time_card > b {
-    line-height: 2.5;
-} */
-
-/* #wait_time_card {
-    margin: 20px 0px;
-}
-
-#patient_volume_hm {
-    height: 400px;
-} */
-
-/* .table-row:nth-child(even) {
-    background-color: #f2f2f2;
-}
-
-.row-department > b {
-    display: table-cell;
-    vertical-align: middle;
-}
-
-#header_wait_time_min, #header_care_score {
-    display: table;
-}
-
-#header_wait_time_min > b, #header_care_score > b {
-    display: table-cell;
-    vertical-align: middle;
-} */
-
-
 /*
-  ##Device = Most of the Smartphones Mobiles / ipad (Portrait)
-  */
-
+    ##Device = Most of the Smartphones Mobiles / ipad (Portrait)
+*/
 @media only screen and (max-width: 750px), screen and (min-width: 768px) and (max-width: 1024px) {
 
     body {
@@ -178,8 +124,8 @@ Header {
         margin: 0px;
     }
 
-    .banner {
-        height: 6rem;
+    .footer {
+        height: 2rem;
     }
 
     h5 {
@@ -207,41 +153,9 @@ Header {
         padding: 0rem 0.5rem;
     }
 
-    /* #reset-btn-outer {
-        text-align: center;
-    }
-
-    .table-row > div {
-        width: 100% !important;
-        text-align: center;
-        margin: auto;
-    }
-
-    .table-row:nth-child(even), .table-row:nth-child(odd) {
-        background-color: #FFFFFF;
-    } */
-
     #header {
         display: none;
     }
-
-    /* #wait_time_table:after {
-        content: "";
-        display: table;
-        clear: both;
-    }
-
-    #patient_volume_card > b, #wait_time_card > b {
-        line-height: 2.5;
-        font-size: 13px;
-        display: block;
-        text-align: center;
-    }
-
-    .annotation-text {
-        font-size: 0.8rem !important;
-    } */
-
 }
 
 .collapsible {
