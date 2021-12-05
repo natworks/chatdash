@@ -19,10 +19,6 @@ with open("./key.txt", "r") as f:
     ACCESS_KEY = f.read()
 
 
-def display_signal_analysis(chat_data: pd.DataFrame):
-    pass
-
-
 def get_busiest_day(chat_data: pd.DataFrame):
     unique_days = [
         [date, len(counts)]
@@ -201,10 +197,17 @@ def display_biggest_spammer(chat_data: pd.DataFrame):
             favourite_site.append([0, 0])
 
     idx_spammer = links_per_user.index(max(links_per_user))
+    fig = px.pie(
+        pd.DataFrame.from_dict({"authors": author_names, "links": links_per_user}),
+        values="links",
+        names="authors",
+        color_discrete_sequence=px.colors.sequential.RdBu,
+    )
     return (
         author_names[idx_spammer],
         favourite_site[idx_spammer][0],
         favourite_site[idx_spammer][1],
+        fig,
     )
 
 
@@ -339,11 +342,9 @@ def handle_signal_media(chat_data: pd.DataFrame):
     return gif_person, fig_gifs, audio_person, fig_audios
 
 
-def handle_android_media(chat_data: pd.DataFrame, language: str):
+def handle_android_media(chat_data: pd.DataFrame, prase: str):
     author_names, _ = data_cleaning.get_users(chat_data)
     media_per_author = []
-
-    prase = "Mídia omitida" if language == "pt" else "<Media omitted>"
 
     for author in author_names:
         author_msgs = chat_data[chat_data["author"] == author]
@@ -365,11 +366,12 @@ def handle_android_media(chat_data: pd.DataFrame, language: str):
 
 def handle_iphone_media(chat_data: pd.DataFrame, language: str):
     author_names, _ = data_cleaning.get_users(chat_data)
+
+    gif_phrase = utils.GIF_OMITTED_LANG.get(language)
+    audio_phrase = utils.AUDIO_OMITTED_LANG.get(language)
+
     gifs_per_author = []
     audios_per_author = []
-
-    gif_phrase = "GIF omitido" if language == "pt" else "GIF omitted"
-    audio_phrase = "áudio ocultado" if language == "pt" else "audio omitted"
 
     for author in author_names:
         author_msgs = chat_data[chat_data["author"] == author]
@@ -408,12 +410,21 @@ def display_media_person(chat_data: pd.DataFrame, input_source: str):
         return handle_signal_media(chat_data)
     else:
         body = " ".join(str(msg) for msg in chat_data.body)
-        language = "pt" if "omitida" in body else "en"
 
-        if "Mídia omitida" in body or "<Media omitted>" in body:
-            return handle_android_media(chat_data, language)
-        else:
-            return handle_iphone_media(chat_data, language)
+        try:
+            for android_media in utils.ANDROID_MEDIA_OMITTED:
+                if android_media in body:
+                    return handle_android_media(chat_data, android_media)
+
+            for iphone_media in list(utils.IPHONE_MEDIA_OMITTED.keys()):
+                if iphone_media in body:
+                    return handle_iphone_media(
+                        chat_data, utils.IPHONE_MEDIA_OMITTED[iphone_media]
+                    )
+        except:
+            return None, None, None, None
+
+        return None, None, None, None
 
 
 def generate_word_cloud(chat_data: pd.DataFrame):

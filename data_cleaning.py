@@ -10,13 +10,16 @@ import utils
 def preprocess_input_data(chat_file):
 
     try:
-        chat = pd.read_csv(StringIO(chat_file.decode("utf-8")), sep=",")
+        chat = pd.read_csv(
+            StringIO(chat_file.decode("utf-8")), sep=",", parse_dates=[0]
+        )
         return chat, "signal"
     except:
         og_df = parser._df_from_str(
             StringIO(chat_file.decode("utf-8")).read(), auto_header=True, hformat=None
         )
         chat = process_input(og_df.iloc[1:])
+        chat.reset_index(inplace=True)
         return chat, "whatsapp"
 
 
@@ -41,7 +44,7 @@ def seprate_date(tstamp):
     return (
         str(tstamp.day),
         utils.WEEKDAYS[tstamp.weekday()],
-        utils.MONTHS[tstamp.month],
+        utils.MONTHS[tstamp.month - 1],
         str(tstamp.year),
         str(tstamp.hour),
     )

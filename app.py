@@ -99,7 +99,7 @@ app.layout = html.Div(
                 html.H6("First Responder"),
                 html.Hr(),
                 html.P(
-                    "This heatmap shows what percentage of the sender's messages was first replied by each of the group members"
+                    "This heatmap shows what percentage of the sender's messages was first replied by each of the group members."
                 ),
                 dcc.Loading(
                     id="loading-input-8",
@@ -177,7 +177,7 @@ app.layout = html.Div(
                     ],
                     type="default",
                 ),
-                html.H6("Remember some of your messages"),
+                html.H6("Your Messages as Inspirational Quotes. Sort of."),
                 html.Hr(),
                 html.Div(
                     id="quotes",
@@ -315,7 +315,7 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
         unique_days = display_helpers.get_busiest_day(data_subset, years[0])
         responder = dcc.Graph(figure=data_analysis.get_first_responders(data_subset))
         media = display_helpers.get_biggest_spammer(
-            data_subset, time_frame=f" in {years[0]}."
+            data_subset, time_frame=[f"In {years[0]}, ", "was", ""]
         ) + display_helpers.get_media_info(data_subset, source=blob["input_source"])
     else:
         figure, total_msgs = data_analysis.display_num_of_messages(chat_df)
@@ -343,7 +343,7 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
         emojis = display_helpers.get_emojis(chat_df)
         responder = dcc.Graph(figure=data_analysis.get_first_responders(chat_df))
         media = display_helpers.get_biggest_spammer(
-            chat_df, time_frame="."
+            chat_df
         ) + display_helpers.get_media_info(chat_df, source=blob["input_source"])
 
     return children, unique_days, usage, responder, emojis, media

@@ -40,6 +40,15 @@ WEEKDAYS = [
     "Saturday",
     "Sunday",
 ]
+DATE_ENDINGS = {
+    "1": "1st",
+    "21": "21st",
+    "31": "31st",
+    "2": "2nd",
+    "22": "22nd",
+    "3": "3rd",
+    "23": "2rd",
+}
 HOURS = [t for t in range(24)]
 CMAP = cm.get_cmap("RdYlBu")
 
@@ -226,8 +235,25 @@ stopwords.update(
         "though",
         "tho",
         "well",
+        "omis",
+        "absente",
+        "retiré",
     ]
 )
+
+GIF_OMITTED_LANG = {"pt": "GIF omitido", "en": "GIF omitted", "fr": "GIF retiré"}
+
+AUDIO_OMITTED_LANG = {"pt": "áudio ocultado", "en": "audio omitted", "fr": "audio omis"}
+
+ANDROID_MEDIA_OMITTED_TO_LANG = {
+    "<Média omis>": "fr",
+    "<Mídia omitida>": "pt",
+    "<Media omitted>": "en",
+}
+
+ANDROID_MEDIA_OMITTED = list(ANDROID_MEDIA_OMITTED_TO_LANG.keys())
+
+IPHONE_MEDIA_OMITTED = {item: key for key, item in GIF_OMITTED_LANG.items()}
 
 
 # Image utility functions
@@ -248,3 +274,11 @@ def pil_to_b64(im, enc_format="png", verbose=False, **kwargs):
         print(f"PIL converted to b64 in {time.time() - t_start:.3f} sec")
 
     return encoded
+
+
+def day_text(number):
+
+    if number in DATE_ENDINGS:
+        return DATE_ENDINGS[number]
+    else:
+        return f"{number}th"

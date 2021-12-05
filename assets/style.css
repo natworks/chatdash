@@ -55,14 +55,29 @@ H5 {
 
 H5, H3 {
     font-family: Acumin, "Helvetica Neue", sans-serif;
+    font-weight: bold;
+    font-size: 3rem;
 }
 
 H6 {
-    font-size: 4rem;
+    font-size: 3rem;
+    font-weight: bold;
 }
 
 Header {
     font-size: 1.5rem;
+}
+
+.content A {
+    font-weight: bold;
+    text-decoration: none;
+}
+.content A:hover{
+    color: #1e6091;
+}
+
+#description-card P{
+    font-size: 2.rem;
 }
 
 #left-column {

@@ -1,11 +1,17 @@
 from dash import dcc
 from dash import html
 
+import base64
+import pathlib
 from calendar import isleap
 from datetime import datetime
 
 import utils
 import data_analysis
+
+# Path
+BASE_PATH = pathlib.Path(__file__).parent.resolve()
+ASSETS_PATH = BASE_PATH.joinpath("assets").resolve()
 
 
 def description_card():
@@ -19,12 +25,21 @@ def description_card():
             html.Div(
                 id="intro",
                 children=[
-                    "Simply load a group chat that has been ",
-                    html.A(
-                        "exported from WhatsApp",
-                        href="https://faq.whatsapp.com/android/chats/how-to-save-your-chat-history/?lang=en",
+                    # html.P("ChatDash is an app for analysing chat data that has been beWhatsApp chata cata."),
+                    html.P(
+                        children=[
+                            "ChatDash is an app for analysing chat data which has been ",
+                            html.A(
+                                "exported from WhatsApp",
+                                href="https://faq.whatsapp.com/android/chats/how-to-save-your-chat-history/?lang=en",
+                            ),
+                            ". On the right you can see a demo of what the analysis will look like.",
+                        ]
                     ),
-                    " and ChatDash will analyse it for you. On the right, you can see a demo of what the analysis will look like.",
+                    html.P(
+                        "Simply load your chat file below to get started!",
+                        style={"font-weight": "bold"},
+                    ),
                 ],
             ),
         ],
@@ -112,7 +127,21 @@ def get_faq():
                     html.Div(
                         className="content",
                         children=[
-                            html.P("You may yell at me on @twitter or just email me @"),
+                            html.P(
+                                children=[
+                                    "You may yell at me on Twitter ",
+                                    html.A(
+                                        "@chatdashapp",
+                                        href="https://twitter.com/chatdashapp",
+                                    ),
+                                    " or just email me ",
+                                    html.A(
+                                        "chatdashapp(at)gmail.com",
+                                        href="mailto:chatdashapp@gmail.com",
+                                    ),
+                                    ".",
+                                ]
+                            ),
                         ],
                         id="bt4-child",
                     ),
@@ -192,38 +221,24 @@ def get_emojis(chat_df):
     )
 
 
-def get_biggest_spammer(chat_df, time_frame=""):
-    spammer, favourite_source, source_quantity = data_analysis.display_biggest_spammer(
-        chat_df
-    )
+def get_biggest_spammer(chat_df, time_frame=["", "is", "have"]):
+    (
+        spammer,
+        favourite_source,
+        source_quantity,
+        fig,
+    ) = data_analysis.display_biggest_spammer(chat_df)
     return [
         html.P(
             [
+                time_frame[0],
                 html.Span(f"{spammer}", style={"font-size": "28px"}),
-                " is the biggest spammer in your group. Their favourite source is ",
+                f" {time_frame[1]} the biggest spammer in your group. Their favourite source {time_frame[1]} ",
                 html.A(f"{favourite_source}", href=f"{favourite_source}"),
-                f". In fact, they have shared this website alone {source_quantity} times{time_frame}",
+                f". In fact, they {time_frame[2]} shared this website alone {source_quantity} times.",
             ]
         ),
-        html.Img(
-            src="imgs/awkward_copy.png",
-            style={
-                "display": "block",
-                "margin-left": "auto",
-                "margin-right": "auto",
-                "width": "50%",
-            },
-        ),
-        html.Caption(
-            "awkward..",
-            style={
-                "display": "block",
-                "margin-left": "auto",
-                "margin-right": "auto",
-                "width": "100%",
-                "font-size": "15px",
-            },
-        ),
+        dcc.Graph(figure=fig),
     ]
 
 
@@ -231,6 +246,40 @@ def get_media_info(chat_df, source):
     gif_person, fig_gif, audio_person, fig_audio = data_analysis.display_media_person(
         chat_df, source
     )
+
+    if fig_gif is None:
+        encoded_image = base64.b64encode(
+            open(ASSETS_PATH.joinpath("error.png"), "rb").read()
+        )
+        return [
+            html.Img(
+                src=utils.HTML_IMG_SRC_PARAMETERS + encoded_image.decode(),
+                style={
+                    "display": "block",
+                    "margin-left": "auto",
+                    "margin-right": "auto",
+                    "width": "50%",
+                },
+            ),
+            html.Caption(
+                children=[
+                    "Original Image by: Who’s Denilo ?",
+                    html.A(
+                        "(@whoisdenilo)",
+                        href="https://unsplash.com/@whoisdenilo",
+                    ),
+                    " from Unsplash",
+                ],
+                style={
+                    "display": "block",
+                    "margin-left": "auto",
+                    "margin-right": "auto",
+                    "width": "100%",
+                    "font-size": "10px",
+                },
+            ),
+        ]
+
     if fig_audio:
         return [
             html.P(
@@ -269,20 +318,11 @@ def get_word_cloud(df):
     )
 
 
-def _day_text(number):
-
-    day = "1st" if number == "1" else f"{number}th"
-    day = "2nd" if number == "2" else f"{number}th"
-    day = "3rd" if number == "3" else f"{number}th"
-
-    return day
-
-
 def get_busiest_day(df, years):
     date, msg_count = data_analysis.get_busiest_day(df)
     time_gap_text, gap_start, gap_end = data_analysis.get_biggest_msg_gap(df)
 
-    day = _day_text(str(date[0]))
+    day = utils.day_text(str(date[0]))
 
     right_now = datetime.now(tz=None)
     if years == "All years" or years == str(right_now.year):
@@ -304,8 +344,8 @@ def get_busiest_day(df, years):
                     f"{df.shape[0]//days_so_far} messages",
                     style={"font-size": "16px", "font-weight": "bold"},
                 ),
-                f" per day. The quiest period happened between the {_day_text(str(gap_start['day_of_month']))} of {gap_start['month']} \
-             of {gap_start['year']} and the {_day_text(str(gap_end['day_of_month']))} of {gap_end['month']} of {gap_end['year']}, a total of ",
+                f" per day. The quiest period happened between the {utils.day_text(str(gap_start['day_of_month']))} of {gap_start['month']} \
+             of {gap_start['year']} and the {utils.day_text(str(gap_end['day_of_month']))} of {gap_end['month']} of {gap_end['year']}, a total of ",
                 html.Span(
                     f"{time_gap_text}",
                     style={"font-size": "16px", "font-weight": "bold"},
@@ -330,8 +370,8 @@ def get_busiest_day(df, years):
                     f"{df.shape[0]//days_so_far} messages",
                     style={"font-size": "16px", "font-weight": "bold"},
                 ),
-                f" per day. The quiest period happened between the {_day_text(str(gap_start['day_of_month']))} of {gap_start['month']} \
-             of {gap_start['year']} and the {_day_text(str(gap_end['day_of_month']))} of {gap_end['month']} of {gap_end['year']}, a total of ",
+                f" per day. The quiest period happened between the {utils.day_text(str(gap_start['day_of_month']))} of {gap_start['month']} \
+             of {gap_start['year']} and the {utils.day_text(str(gap_end['day_of_month']))} of {gap_end['month']} of {gap_end['year']}, a total of ",
                 html.Span(
                     f"{time_gap_text}",
                     style={"font-size": "16px", "font-weight": "bold"},
@@ -378,9 +418,7 @@ def initialise_emojis(df):
 
 
 def initialise_media(df):
-    return get_biggest_spammer(df, time_frame=".") + get_media_info(
-        df, source="android"
-    )
+    return get_biggest_spammer(df) + get_media_info(df, source="android")
 
 
 def initialise_quotes(df):
