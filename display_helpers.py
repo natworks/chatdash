@@ -96,7 +96,7 @@ def get_faq():
                                     "No! Everything runs locally in your browser and no data is sent to a server. If you don't want to take my word for it, you can check the code out on ",
                                     html.A(
                                         "Github",
-                                        href="https://github.com/natworks/chat_analysis",
+                                        href="https://github.com/natworks/chatdash",
                                     ),
                                     ".",
                                 ]
