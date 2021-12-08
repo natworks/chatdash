@@ -21,6 +21,7 @@ import data_cleaning
 
 ACCESS_KEY = os.getenv("ACCESS_KEY")
 
+
 def get_busiest_day(chat_data: pd.DataFrame):
     unique_days = [
         [date, len(counts)]
@@ -248,9 +249,7 @@ def display_quote(chat_data: pd.DataFrame):
     r = requests.get(url)  # , data=token_data, headers=token_headers)
     token_response_data = r.json()
 
-    font = ImageFont.truetype(
-        "./fonts/philosopher/Philosopher-BoldItalic.ttf", 32, encoding="unic"
-    )
+    font = ImageFont.truetype("./assets/fonts/Philosopher-BoldItalic.ttf", 32, encoding="unic")
 
     body_idx = chat_data.columns.get_loc("body")
     author_idx = chat_data.columns.get_loc("author")
