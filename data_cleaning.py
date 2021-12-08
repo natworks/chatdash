@@ -2,8 +2,7 @@ import re
 import pandas as pd
 from io import StringIO
 
-from whatstk.whatsapp import parser
-
+from parser import file_converter
 import utils
 
 
@@ -15,11 +14,10 @@ def preprocess_input_data(chat_file):
         )
         return chat, "signal"
     except:
-        og_df = parser._df_from_str(
-            StringIO(chat_file.decode("utf-8")).read(), auto_header=True, hformat=None
+        og_df = file_converter.convert_text_to_df(
+            StringIO(chat_file.decode("utf-8")).read()
         )
         chat = process_input(og_df.iloc[1:])
-        chat.reset_index(inplace=True)
         return chat, "whatsapp"
 
 
