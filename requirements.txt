@@ -1,0 +1,12 @@
+wordcloud
+dash==2.0.0
+gunicorn~=19.9.0
+emoji~=1.6.1
+numpy~=1.19.5
+pandas~=1.2.5
+pathlib~=1.0.1
+Pillow~=8.4.0
+plotly~=5.4.0
+regex~=2021.11.2
+requests~=2.26.0
+python-dotenv~=0.19.2
