@@ -75,7 +75,8 @@ def get_faq():
                                     html.Span(" > ", style={"font-weight": "bold"}),
                                     html.Span("More", style={"font-style": "italic"}),
                                     html.Span(" > ", style={"font-weight": "bold"}),
-                                    "Export chat. Exporting without media is recommended.",
+                                    "Export chat. ",
+                                    html.Span("Exporting without media is recommended.", style={"font-weight": "bold"})
                                 ]
                             ),
                         ],
@@ -119,10 +120,25 @@ def get_faq():
                         id="bt3-child",
                     ),
                     html.Button(
-                        children=["Things don't work. Where can I complain?"],
+                        "Why is my media information not displaying correctly?",
                         n_clicks=0,
                         className="collapsible",
                         id="fqa-b4",
+                    ),
+                    html.Div(
+                        className="content",
+                        children=[
+                            html.P(
+                                "Media information relies on parsing the file searching for certain key phrases. They vary according to your device's system langue. At the moment, ChatDash only supports English, Portuguese, and French."
+                            ),
+                        ],
+                        id="bt4-child",
+                    ),
+                    html.Button(
+                        children=["Other things don't work. Where can I complain?"],
+                        n_clicks=0,
+                        className="collapsible",
+                        id="fqa-b5",
                     ),
                     html.Div(
                         className="content",
@@ -143,7 +159,7 @@ def get_faq():
                                 ]
                             ),
                         ],
-                        id="bt4-child",
+                        id="bt5-child",
                     ),
                 ]
             ),
@@ -164,6 +180,8 @@ def get_usage_plots(chat_df, year: str = ""):
         chat_df, "hour_of_day", "Hour of Day", utils.HOURS, author_names
     )
 
+    top_hour_end = str(int(top_hour) + 1)
+
     if year:
         month_text = [
             f"In {year}, ",
@@ -179,7 +197,7 @@ def get_usage_plots(chat_df, year: str = ""):
         ]
         hour_text = [
             html.Span(
-                f"{top_hour}:00hr", style={"font-size": "18px", "font-weight": "bold"}
+                f"{top_hour}:00 to {top_hour_end}:00", style={"font-size": "18px", "font-weight": "bold"}
             ),
             f" was when the chat was the busiest in {year}.",
         ]
@@ -197,8 +215,13 @@ def get_usage_plots(chat_df, year: str = ""):
             " has been the",
         ]
         hour_text = [
+            "From ",
             html.Span(
-                f"{top_hour}:00hr", style={"font-size": "18px", "font-weight": "bold"}
+                f"{top_hour}:00", style={"font-size": "18px", "font-weight": "bold"}
+            ),
+            " to ",
+            html.Span(
+                f"{top_hour_end}:00", style={"font-size": "18px", "font-weight": "bold"}
             ),
             " is when the chat is normally most alive.",
         ]
@@ -337,9 +360,9 @@ def get_busiest_day(df, years):
             children=[
                 "It has been ",
                 html.Span(
-                    f"{days_so_far}", style={"font-size": "16px", "font-weight": "bold"}
+                    f"{days_so_far} days", style={"font-size": "16px", "font-weight": "bold"}
                 ),
-                " days since the first available message in this group. That is an average of ",
+                " since the first available message in this group. That is an average of ",
                 html.Span(
                     f"{df.shape[0]//days_so_far} messages",
                     style={"font-size": "16px", "font-weight": "bold"},
@@ -551,7 +574,7 @@ def get_numbers_dropdown(author_names, phone_numbers):
             "Some of you friends have changed numbers over the years. For a more accurate analysis, please specify their owners."
         ),
     ]
-    names = ["Ignore number"] + author_names
+    names = ["Use number"] + author_names
     for dp_n, number in enumerate(phone_numbers):
         box.append(html.B(f"Phone {number} belongs to:"))
         box.append(

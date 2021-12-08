@@ -1,4 +1,5 @@
 import re
+import os
 import requests
 import numpy as np
 import pandas as pd
@@ -11,13 +12,14 @@ import plotly.express as px
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
 from wordcloud import WordCloud
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import utils
 import data_cleaning
 
-with open("./key.txt", "r") as f:
-    ACCESS_KEY = f.read()
-
+ACCESS_KEY = os.getenv("ACCESS_KEY")
 
 def get_busiest_day(chat_data: pd.DataFrame):
     unique_days = [
@@ -240,6 +242,7 @@ def display_quote(chat_data: pd.DataFrame):
     count = 0
     images = {}
     captions = {}
+
     url = f"https://api.unsplash.com/photos/random/?topics=='nature'&count=3&orientation=landscape&client_id={ACCESS_KEY}"
 
     r = requests.get(url)  # , data=token_data, headers=token_headers)
@@ -286,7 +289,7 @@ def display_quote(chat_data: pd.DataFrame):
             d = ImageDraw.Draw(images[count])
             width, height = images[count].size
 
-            sentences = split_sentence(txt, char_per_line=26)
+            sentences = split_sentence(txt.strip(), char_per_line=26)
 
             d.multiline_text(
                 (int(width * 0.1), int(height * 0.05)),

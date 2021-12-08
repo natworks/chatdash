@@ -177,7 +177,7 @@ app.layout = html.Div(
                     ],
                     type="default",
                 ),
-                html.H6("Your Messages as Inspirational Quotes. Sort of."),
+                html.H6("Relieving Some of Your Messages"),
                 html.Hr(),
                 html.Div(
                     id="quotes",
@@ -287,7 +287,7 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
         num_name_pairs = {
             pn: name
             for pn, name in zip(phone_numbers, phone_dps)
-            if name != "Ignore number"
+            if name != "Use number"
         }
 
         data_cleaning.fix_phone_numbers(chat_df, num_name_pairs)
@@ -388,7 +388,7 @@ def display_quotes(jsonified_cleaned_data, click, phone_dps):
             num_name_pairs = {
                 pn: name
                 for pn, name in zip(phone_numbers, phone_dps)
-                if name != "Ignore number"
+                if name != "Use number"
             }
 
             data_cleaning.fix_phone_numbers(chat_df, num_name_pairs)
@@ -457,20 +457,23 @@ def input_triggers_spinner(value):
     Output("bt2-child", "style"),
     Output("bt3-child", "style"),
     Output("bt4-child", "style"),
+    Output("bt5-child", "style"),
     Input("fqa-b1", "n_clicks"),
     Input("fqa-b2", "n_clicks"),
     Input("fqa-b3", "n_clicks"),
     Input("fqa-b4", "n_clicks"),
+    Input("fqa-b5", "n_clicks"),
     prevent_initial_call=True,
 )
-def control_faq(btn1, btn2, btn3, btn4):
+def control_faq(btn1, btn2, btn3, btn4, btn5):
 
     style1 = utils.SHOWY_CSS if btn1 % 2 == 1 else utils.BASE_CSS
     style2 = utils.SHOWY_CSS if btn2 % 2 == 1 else utils.BASE_CSS
     style3 = utils.SHOWY_CSS if btn3 % 2 == 1 else utils.BASE_CSS
     style4 = utils.SHOWY_CSS if btn4 % 2 == 1 else utils.BASE_CSS
+    style5 = utils.SHOWY_CSS if btn5 % 2 == 1 else utils.BASE_CSS
 
-    return style1, style2, style3, style4
+    return style1, style2, style3, style4, style5
 
 
 # Run the server
