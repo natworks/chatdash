@@ -37,6 +37,5 @@ python app.py
 
 * The app layout has been (**heavily**) inspired by [Clinical Analytics Dashboard](https://dash.gallery/dash-clinical-analytics/)
 * Parsing Whatsapp files has been made robust by using parts of the code available in [whatstk's parser](https://github.com/lucasrodes/whatstk/blob/main/whatstk/whatsapp/parser.py)
-* Images for generating the quote come from [unsplash](https://unsplash.com)
 * Images for generating the quotes come from [unsplash](https://unsplash.com)
 * The default chat was generated with [DeepAi's text generator](https://deepai.org/machine-learning-model/text-generator)
