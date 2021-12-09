@@ -1,3 +1,4 @@
+import os
 import dash
 from dash import dcc
 from dash import html
@@ -15,6 +16,10 @@ import data_cleaning
 import data_analysis
 import display_helpers
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 app = dash.Dash(
     __name__,
@@ -31,6 +36,22 @@ DATA_PATH = BASE_PATH.joinpath("data").resolve()
 
 # demo data
 default_df = pd.read_csv(DATA_PATH.joinpath("random_generator_v3.txt"), parse_dates=[0])
+
+TAG_ID = os.getenv("ACCESS_KEY")
+
+app.html_layout = """
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id={}"></script>
+""".format(TAG_ID) + \
+"""<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+""" + \
+"""
+  gtag('config', '{}');
+</script>
+""".format(TAG_ID)
 
 # main app
 app.layout = html.Div(
