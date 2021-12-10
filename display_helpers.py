@@ -38,8 +38,11 @@ def description_card():
                     ),
                     html.P(
                         children=[
-                            html.Span("Simply load your chat file below to get started!", style={"font-weight": "bold"}),
-                            " Please noting that loading may take a few seconds depending on the size of you file."
+                            html.Span(
+                                "Simply load your chat file below to get started!",
+                                style={"font-weight": "bold"},
+                            ),
+                            " Please note that loading may take a few seconds depending on the size of you file.",
                         ]
                     ),
                 ],
@@ -78,7 +81,10 @@ def get_faq():
                                     html.Span("More", style={"font-style": "italic"}),
                                     html.Span(" > ", style={"font-weight": "bold"}),
                                     "Export chat. ",
-                                    html.Span("Exporting without media is recommended.", style={"font-weight": "bold"})
+                                    html.Span(
+                                        "Exporting without media is recommended.",
+                                        style={"font-weight": "bold"},
+                                    ),
                                 ]
                             ),
                         ],
@@ -172,14 +178,31 @@ def get_faq():
 def get_usage_plots(chat_df, year: str = ""):
     author_names = list(chat_df["author"].unique())
 
+    plot_title_add = f"in {year}" if year else ""
+
     month_chart, top_month = data_analysis.get_frequency_info(
-        chat_df, "month", "Month", utils.MONTHS, author_names
+        chat_df,
+        "month",
+        "Month",
+        utils.MONTHS,
+        author_names,
+        plot_title=f"Busiest Month {plot_title_add}",
     )
     day_chart, top_day = data_analysis.get_frequency_info(
-        chat_df, "weekday", "Weekday", utils.WEEKDAYS, author_names
+        chat_df,
+        "weekday",
+        "Weekday",
+        utils.WEEKDAYS,
+        author_names,
+        plot_title=f"Busiest Day of The Week {plot_title_add}",
     )
     hour_chart, top_hour = data_analysis.get_frequency_info(
-        chat_df, "hour_of_day", "Hour of Day", utils.HOURS, author_names
+        chat_df,
+        "hour_of_day",
+        "Hour of Day",
+        utils.HOURS,
+        author_names,
+        plot_title=f"Busiest Hour of The Day {plot_title_add}",
     )
 
     top_hour_end = str(int(top_hour) + 1)
@@ -199,7 +222,8 @@ def get_usage_plots(chat_df, year: str = ""):
         ]
         hour_text = [
             html.Span(
-                f"{top_hour}:00 to {top_hour_end}:00", style={"font-size": "18px", "font-weight": "bold"}
+                f"{top_hour}:00 to {top_hour_end}:00",
+                style={"font-size": "18px", "font-weight": "bold"},
             ),
             f" was when the chat was the busiest in {year}.",
         ]
@@ -362,7 +386,8 @@ def get_busiest_day(df, years):
             children=[
                 "It has been ",
                 html.Span(
-                    f"{days_so_far} days", style={"font-size": "16px", "font-weight": "bold"}
+                    f"{days_so_far} days",
+                    style={"font-size": "16px", "font-weight": "bold"},
                 ),
                 " since the first available message in this group. That is an average of ",
                 html.Span(
@@ -413,7 +438,9 @@ def get_busiest_day(df, years):
 
 def initialise_table(df):
     children = []
-    figure, total_msgs = data_analysis.display_num_of_messages(df)
+    figure, total_msgs = data_analysis.display_num_of_messages(
+        df, plot_title="Total Number of Messages"
+    )
     children.append(
         html.P(
             [
@@ -548,7 +575,7 @@ def generate_control_card():
                 },
                 # Allow multiple files to be uploaded
                 multiple=False,
-                accept=".txt"
+                accept=".txt",
             ),
             dcc.Store(id="original-df"),
             html.Div(id="output-data-upload", children=[]),

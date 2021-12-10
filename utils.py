@@ -47,7 +47,7 @@ DATE_ENDINGS = {
     "2": "2nd",
     "22": "22nd",
     "3": "3rd",
-    "23": "2rd",
+    "23": "23rd",
 }
 HOURS = [t for t in range(24)]
 CMAP = cm.get_cmap("RdYlBu")

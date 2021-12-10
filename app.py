@@ -39,19 +39,25 @@ default_df = pd.read_csv(DATA_PATH.joinpath("random_generator_v3.txt"), parse_da
 
 TAG_ID = os.getenv("ACCESS_KEY")
 
-app.html_layout = """
+app.html_layout = (
+    """
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id={}"></script>
-""".format(TAG_ID) + \
-"""<script>
+""".format(
+        TAG_ID
+    )
+    + """<script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-""" + \
 """
+    + """
   gtag('config', '{}');
 </script>
-""".format(TAG_ID)
+""".format(
+        TAG_ID
+    )
+)
 
 # main app
 app.layout = html.Div(
@@ -206,7 +212,7 @@ app.layout = html.Div(
                         html.Button(
                             "Generate New",
                             id="btn-see-media",
-                            style={"margin-bottom": "20px"},
+                            style={"margin-bottom": "30px"},
                         ),
                         dcc.Loading(
                             id="loading-input-6",
@@ -315,13 +321,15 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
 
     if years and years[0] != "All years":
         data_subset = chat_df[chat_df["year"] == years[0]]
-        figure, total_msgs = data_analysis.display_num_of_messages(data_subset)
+        figure, total_msgs = data_analysis.display_num_of_messages(
+            data_subset, plot_title=f"Total Number of Messages in {years[0]}"
+        )
         children.append(
             html.P(
                 [
                     "Your group has shared a total of ",
                     html.Span(
-                        f"{total_msgs:,} messages.",
+                        f"{total_msgs:,} messages",
                         style={"font-size": "18px", "font-weight": "bold"},
                     ),
                     f" in {years[0]}.",
@@ -339,7 +347,9 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
             data_subset, time_frame=[f"In {years[0]}, ", "was", ""]
         ) + display_helpers.get_media_info(data_subset, source=blob["input_source"])
     else:
-        figure, total_msgs = data_analysis.display_num_of_messages(chat_df)
+        figure, total_msgs = data_analysis.display_num_of_messages(
+            chat_df, plot_title=f"Total Number of Messages"
+        )
         children.append(
             html.P(
                 [
@@ -355,7 +365,12 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
         if years:
             author_names = list(chat_df["author"].unique())
             yearly_breakdown, total_msgs = data_analysis.get_frequency_info(
-                chat_df, "year", "Year", list(chat_df["year"].unique()), author_names
+                chat_df,
+                "year",
+                "Year",
+                list(chat_df["year"].unique()),
+                author_names,
+                plot_title="Total Number of Messager Per Year and Per User",
             )
             children.append(dcc.Graph(figure=yearly_breakdown))
 
