@@ -18,6 +18,7 @@ def preprocess_input_data(chat_file):
             StringIO(chat_file.decode("utf-8")).read()
         )
         chat = process_input(og_df.iloc[1:])
+        chat.reset_index(inplace=True)
         return chat, "whatsapp"
 
 
