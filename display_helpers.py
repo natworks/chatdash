@@ -37,8 +37,10 @@ def description_card():
                         ]
                     ),
                     html.P(
-                        "Simply load your chat file below to get started!",
-                        style={"font-weight": "bold"},
+                        children=[
+                            html.Span("Simply load your chat file below to get started!", style={"font-weight": "bold"}),
+                            " Please noting that loading may take a few seconds depending on the size of you file."
+                        ]
                     ),
                 ],
             ),
@@ -533,7 +535,7 @@ def generate_control_card():
         children=[
             dcc.Upload(
                 id="upload-data",
-                children=html.Div(["Drag and Drop or ", html.A("chat file")]),
+                children=html.Div(["Drag and Drop or ", html.A("chat file (.txt)")]),
                 style={
                     "width": "100%",
                     "height": "60px",
@@ -546,6 +548,7 @@ def generate_control_card():
                 },
                 # Allow multiple files to be uploaded
                 multiple=False,
+                accept=".txt"
             ),
             dcc.Store(id="original-df"),
             html.Div(id="output-data-upload", children=[]),
