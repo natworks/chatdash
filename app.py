@@ -291,6 +291,74 @@ def load_data(contents):
 
 @app.callback(
     Output("group-volume-data", "children"),
+    Input("original-df", "data"),
+    Input({"type": "filter-dropdown", "index": ALL}, "value"),
+    Input({"type": "number-dropdowns", "index": ALL}, "value"),
+    prevent_initial_call=True,
+    suppress_callback_exceptions=True,
+)
+def update_messages(jsonified_cleaned_data, years, phone_dps):
+    if jsonified_cleaned_data is None:
+        return display_helpers.initialise_table(default_df)
+    else:
+        blob = json.loads(jsonified_cleaned_data)
+        chat_df = pd.read_json(blob["chat_df"], orient="split")
+
+        if phone_dps:
+            data_cleaning.fix_phone_numbers(chat_df, phone_dps)
+
+        children = []
+
+        if years and years[0] != "All years":
+            data_subset = chat_df[chat_df["year"] == years[0]]
+            figure, total_msgs = data_analysis.display_num_of_messages(
+                data_subset, plot_title=f"Total Number of Messages in {years[0]}"
+            )
+            children.append(
+                html.P(
+                    [
+                        "Your group has shared a total of ",
+                        html.Span(
+                            f"{total_msgs:,} messages",
+                            style={"font-size": "18px", "font-weight": "bold"},
+                        ),
+                        f" in {years[0]}.",
+                    ]
+                )
+            )
+            children.append(dcc.Graph(figure=figure))
+        else:
+            figure, total_msgs = data_analysis.display_num_of_messages(
+                chat_df, plot_title=f"Total Number of Messages"
+            )
+            children.append(
+                html.P(
+                    [
+                        "Your group has shared a total of ",
+                        html.Span(
+                            f"{total_msgs:,} messages.",
+                            style={"font-size": "18px", "font-weight": "bold"},
+                        ),
+                    ]
+                )
+            )
+            children.append(dcc.Graph(figure=figure))
+            if years:
+                author_names = list(chat_df["author"].unique())
+                yearly_breakdown, total_msgs = data_analysis.get_frequency_info(
+                    chat_df,
+                    "year",
+                    "Year",
+                    list(chat_df["year"].unique()),
+                    author_names,
+                    plot_title="Total Number of Messager Per Year and Per User",
+                )
+                children.append(dcc.Graph(figure=yearly_breakdown))
+
+        return children
+
+
+@app.callback(
     Output("unique_days", "children"),
     Output("chatting-patterns", "children"),
     Output("responding-patterns", "children"),
@@ -306,38 +374,13 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
 
     blob = json.loads(jsonified_cleaned_data)
     chat_df = pd.read_json(blob["chat_df"], orient="split")
-    children = []
     media = []
 
     if phone_dps:
-        _, phone_numbers = data_cleaning.get_users(chat_df)
-        num_name_pairs = {
-            pn: name
-            for pn, name in zip(phone_numbers, phone_dps)
-            if name != "Use number"
-        }
-
-        data_cleaning.fix_phone_numbers(chat_df, num_name_pairs)
+        data_cleaning.fix_phone_numbers(chat_df, phone_dps)
 
     if years and years[0] != "All years":
         data_subset = chat_df[chat_df["year"] == years[0]]
-        figure, total_msgs = data_analysis.display_num_of_messages(
-            data_subset, plot_title=f"Total Number of Messages in {years[0]}"
-        )
-        children.append(
-            html.P(
-                [
-                    "Your group has shared a total of ",
-                    html.Span(
-                        f"{total_msgs:,} messages",
-                        style={"font-size": "18px", "font-weight": "bold"},
-                    ),
-                    f" in {years[0]}.",
-                ]
-            )
-        )
-        children.append(dcc.Graph(figure=figure))
-
         usage = display_helpers.get_usage_plots(data_subset, years[0])
         emojis = display_helpers.get_emojis(data_subset)
         data_subset.reset_index(inplace=True)
@@ -347,33 +390,6 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
             data_subset, time_frame=[f"In {years[0]}, ", "was", ""]
         ) + display_helpers.get_media_info(data_subset, source=blob["input_source"])
     else:
-        figure, total_msgs = data_analysis.display_num_of_messages(
-            chat_df, plot_title=f"Total Number of Messages"
-        )
-        children.append(
-            html.P(
-                [
-                    "Your group has shared a total of ",
-                    html.Span(
-                        f"{total_msgs:,} messages.",
-                        style={"font-size": "18px", "font-weight": "bold"},
-                    ),
-                ]
-            )
-        )
-        children.append(dcc.Graph(figure=figure))
-        if years:
-            author_names = list(chat_df["author"].unique())
-            yearly_breakdown, total_msgs = data_analysis.get_frequency_info(
-                chat_df,
-                "year",
-                "Year",
-                list(chat_df["year"].unique()),
-                author_names,
-                plot_title="Total Number of Messager Per Year and Per User",
-            )
-            children.append(dcc.Graph(figure=yearly_breakdown))
-
         usage = display_helpers.get_usage_plots(chat_df)
         unique_days = display_helpers.get_busiest_day(chat_df, "All years")
         emojis = display_helpers.get_emojis(chat_df)
@@ -382,7 +398,7 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
             chat_df
         ) + display_helpers.get_media_info(chat_df, source=blob["input_source"])
 
-    return children, unique_days, usage, responder, emojis, media
+    return unique_days, usage, responder, emojis, media
 
 
 @app.callback(
@@ -420,14 +436,7 @@ def display_quotes(jsonified_cleaned_data, click, phone_dps):
         chat_df = pd.read_json(blob["chat_df"], orient="split")
 
         if phone_dps:
-            _, phone_numbers = data_cleaning.get_users(chat_df)
-            num_name_pairs = {
-                pn: name
-                for pn, name in zip(phone_numbers, phone_dps)
-                if name != "Use number"
-            }
-
-            data_cleaning.fix_phone_numbers(chat_df, num_name_pairs)
+            data_cleaning.fix_phone_numbers(chat_df, phone_dps)
 
         return display_helpers.initialise_quotes(chat_df)
 

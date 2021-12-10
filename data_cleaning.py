@@ -62,7 +62,13 @@ def get_users(chat_data):
     return author_names, phone_numbers
 
 
-def fix_phone_numbers(chat_data, num_name_pairs):
+def fix_phone_numbers(chat_data, phone_dropdowns):
+    _, phone_numbers = get_users(chat_data)
+    num_name_pairs = {
+        pn: name
+        for pn, name in zip(phone_numbers, phone_dropdowns)
+        if name != "Use number"
+    }
 
     for num, name in num_name_pairs.items():
         chat_data.loc[chat_data["author"] == num, "author"] = name
