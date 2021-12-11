@@ -8,18 +8,25 @@ import utils
 
 def preprocess_input_data(chat_file):
 
+    chat_df = None
+    source = None
+
     try:
         chat = pd.read_csv(
             StringIO(chat_file.decode("utf-8")), sep=",", parse_dates=[0]
         )
         return chat, "signal"
     except:
+        pass
+    try:
         og_df = file_converter.convert_text_to_df(
             StringIO(chat_file.decode("utf-8")).read()
         )
         chat = process_input(og_df.iloc[1:])
         chat.reset_index(inplace=True)
         return chat, "whatsapp"
+    except:
+        return chat_df, source
 
 
 def process_input(chat_data: pd.DataFrame):

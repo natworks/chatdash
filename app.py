@@ -254,7 +254,12 @@ app.layout = html.Div(
 def parse_contents(jsonified_cleaned_data, children):
     if jsonified_cleaned_data is not None:
         blob = json.loads(jsonified_cleaned_data)
+
+        if blob["chat_df"] == "FAIL":
+            return None
+
         chat_df = pd.read_json(blob["chat_df"], orient="split")
+
         author_names, phone_numbers = data_cleaning.get_users(chat_df)
 
         years = list(chat_df["year"].unique())
@@ -284,8 +289,12 @@ def load_data(contents):
         chat_df, input_source = data_cleaning.preprocess_input_data(
             base64.b64decode(content_string)
         )
-        json_data = {"chat_df": chat_df.to_json(date_format="iso", orient="split")}
-        json_data["input_source"] = input_source
+        if chat_df is None or input_source is None:
+            json_data = {"chat_df": "FAIL", "input_source": "FAIL"}
+        else:
+            json_data = {"chat_df": chat_df.to_json(date_format="iso", orient="split")}
+            json_data["input_source"] = input_source
+
         return json.dumps(json_data)
 
 
@@ -302,6 +311,10 @@ def update_messages(jsonified_cleaned_data, years, phone_dps):
         return display_helpers.initialise_table(default_df)
     else:
         blob = json.loads(jsonified_cleaned_data)
+
+        if blob["chat_df"] == "FAIL":
+            return display_helpers.get_data_loading_error_message()
+
         chat_df = pd.read_json(blob["chat_df"], orient="split")
 
         if phone_dps:
@@ -373,6 +386,10 @@ def update_messages(jsonified_cleaned_data, years, phone_dps):
 def update_total_messages(jsonified_cleaned_data, years, phone_dps):
 
     blob = json.loads(jsonified_cleaned_data)
+
+    if blob["chat_df"] == "FAIL":
+        return None, None, None, None, None
+
     chat_df = pd.read_json(blob["chat_df"], orient="split")
     media = []
 
@@ -410,6 +427,10 @@ def update_total_messages(jsonified_cleaned_data, years, phone_dps):
 def update_word_cloud(jsonified_cleaned_data, years):
 
     blob = json.loads(jsonified_cleaned_data)
+
+    if blob["chat_df"] == "FAIL":
+        return None
+
     chat_df = pd.read_json(blob["chat_df"], orient="split")
 
     if years and years[0] != "All years":
@@ -433,6 +454,10 @@ def display_quotes(jsonified_cleaned_data, click, phone_dps):
         return display_helpers.initialise_quotes(default_df)
     else:
         blob = json.loads(jsonified_cleaned_data)
+
+        if blob["chat_df"] == "FAIL":
+            return None
+
         chat_df = pd.read_json(blob["chat_df"], orient="split")
 
         if phone_dps:

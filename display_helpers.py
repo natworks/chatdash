@@ -615,3 +615,47 @@ def get_numbers_dropdown(author_names, phone_numbers):
             )
         )
     return box
+
+
+def get_data_loading_error_message():
+    error_data_loading = base64.b64encode(
+        open(ASSETS_PATH.joinpath("sad.jpg"), "rb").read()
+    )
+    return [
+        html.P(
+            children=[
+                "Hi there! We currently don't support the header format associated with the file you have tried to upload and we \
+            cannot read/analyse your group chat right now. Please report this issue by either sending an email to ",
+                html.A("chatdashapp(at)gmail.com", href="mailto:chatdashapp@gmail.com"),
+                " or creating a new issue on ",
+                html.A("Github", href="https://github.com/natworks/chatdash/issues"),
+                ".",
+            ]
+        ),
+        html.Img(
+            src=utils.HTML_IMG_SRC_PARAMETERS + error_data_loading.decode(),
+            style={
+                "display": "block",
+                "margin-left": "auto",
+                "margin-right": "auto",
+                "width": "50%",
+            },
+        ),
+        html.Caption(
+            children=[
+                "Original Image by: Matthew Henry",
+                html.A(
+                    "(@matthewhenry)",
+                    href="https://unsplash.com/@matthewhenry",
+                ),
+                " from Unsplash",
+            ],
+            style={
+                "display": "block",
+                "margin-left": "auto",
+                "margin-right": "auto",
+                "width": "100%",
+                "font-size": "10px",
+            },
+        ),
+    ]
