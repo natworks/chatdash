@@ -204,7 +204,7 @@ app.layout = html.Div(
                     ],
                     type="default",
                 ),
-                html.H6("Relieving Some of Your Messages"),
+                html.H6("Reliving Some of Your Messages"),
                 html.Hr(),
                 html.Div(
                     id="quotes",

@@ -13,7 +13,7 @@ ChatDash is an app created with [Dash](https://dash.plot.ly/) for analysing chat
 
 ### How to locally run this app
 
-**NOTE:** when locally running this app, the last section (i.e. random messages turned into quotes) won't work as it relies on having an Unsplash access key. If you wish to have that working, head over to [Unsplash](https://unsplash.com/developers) to get an aceess for making API requests. Once you have an acess key, either hard code it [here](https://github.com/natworks/chatdash/blob/9c1d06f620037f45c381d072484e8825b0131d7c/data_analysis.py#L22), or create a `.env` file in your project root and include your key there.
+**NOTE:** when locally running this app, the last section (i.e. random messages turned into quotes) won't work as it relies on having an Unsplash access key. If you wish to have that working, head over to [Unsplash](https://unsplash.com/developers) to get an aceess for making API requests. Once you have an access key, either hard code it [here](https://github.com/natworks/chatdash/blob/9c1d06f620037f45c381d072484e8825b0131d7c/data_analysis.py#L22), or create a `.env` file in your project root and include your key there.
 
 ```
 git clone https://github.com/natworks/chatdash
