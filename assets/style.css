@@ -32,6 +32,7 @@ hr {
     text-align: center;
 }
 .footer P {
+    margin-top: 3em;
     text-align: center;
     display: block;
 }
@@ -43,9 +44,18 @@ hr {
     color: #d00000;
 }
 
-#btn-see-media:hover {
+#btn-see-media {
+    height:60%;
+}
+
+#btn-see-media {
     background-color: #2c8cff;
     color: #FFFFFF;
+}
+
+#btn-see-media:hover {
+    background-color: #FFFFFF;
+    color: #2c8cff;
 }
 
 H5 {

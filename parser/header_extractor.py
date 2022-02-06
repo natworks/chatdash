@@ -28,9 +28,9 @@ def extract_header_from_text(text):
 
     # Get format auto
     try:
-        hformat = _extract_header_format_from_lines(lines)
+        hformat, dates_codes = _extract_header_format_from_lines(lines)
         logging.info("Format found was %s", hformat)
-        return hformat
+        return hformat, dates_codes
     except Exception as err:  # noqa
         logging.info("Format not found.")
     return None
@@ -207,4 +207,4 @@ def _extract_header_format_from_components(elements_list, template_list):
     codes = dates_codes + ["%name"]
     code_template = template.format(*codes)
 
-    return code_template
+    return code_template, dates_codes

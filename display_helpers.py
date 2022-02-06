@@ -37,8 +37,13 @@ def description_card():
                         ]
                     ),
                     html.P(
-                        "Simply load your chat file below to get started!",
-                        style={"font-weight": "bold"},
+                        children=[
+                            html.Span(
+                                "Simply load your chat file below to get started!",
+                                style={"font-weight": "bold"},
+                            ),
+                            " Please note that loading may take a few seconds depending on the size of you file.",
+                        ]
                     ),
                 ],
             ),
@@ -76,7 +81,10 @@ def get_faq():
                                     html.Span("More", style={"font-style": "italic"}),
                                     html.Span(" > ", style={"font-weight": "bold"}),
                                     "Export chat. ",
-                                    html.Span("Exporting without media is recommended.", style={"font-weight": "bold"})
+                                    html.Span(
+                                        "Exporting without media is recommended.",
+                                        style={"font-weight": "bold"},
+                                    ),
                                 ]
                             ),
                         ],
@@ -170,14 +178,31 @@ def get_faq():
 def get_usage_plots(chat_df, year: str = ""):
     author_names = list(chat_df["author"].unique())
 
+    plot_title_add = f"in {year}" if year else ""
+
     month_chart, top_month = data_analysis.get_frequency_info(
-        chat_df, "month", "Month", utils.MONTHS, author_names
+        chat_df,
+        "month",
+        "Month",
+        utils.MONTHS,
+        author_names,
+        plot_title=f"Busiest Month {plot_title_add}",
     )
     day_chart, top_day = data_analysis.get_frequency_info(
-        chat_df, "weekday", "Weekday", utils.WEEKDAYS, author_names
+        chat_df,
+        "weekday",
+        "Weekday",
+        utils.WEEKDAYS,
+        author_names,
+        plot_title=f"Busiest Day of The Week {plot_title_add}",
     )
     hour_chart, top_hour = data_analysis.get_frequency_info(
-        chat_df, "hour_of_day", "Hour of Day", utils.HOURS, author_names
+        chat_df,
+        "hour_of_day",
+        "Hour of Day",
+        utils.HOURS,
+        author_names,
+        plot_title=f"Busiest Hour of The Day {plot_title_add}",
     )
 
     top_hour_end = str(int(top_hour) + 1)
@@ -197,7 +222,8 @@ def get_usage_plots(chat_df, year: str = ""):
         ]
         hour_text = [
             html.Span(
-                f"{top_hour}:00 to {top_hour_end}:00", style={"font-size": "18px", "font-weight": "bold"}
+                f"{top_hour}:00 to {top_hour_end}:00",
+                style={"font-size": "18px", "font-weight": "bold"},
             ),
             f" was when the chat was the busiest in {year}.",
         ]
@@ -360,7 +386,8 @@ def get_busiest_day(df, years):
             children=[
                 "It has been ",
                 html.Span(
-                    f"{days_so_far} days", style={"font-size": "16px", "font-weight": "bold"}
+                    f"{days_so_far} days",
+                    style={"font-size": "16px", "font-weight": "bold"},
                 ),
                 " since the first available message in this group. That is an average of ",
                 html.Span(
@@ -411,7 +438,9 @@ def get_busiest_day(df, years):
 
 def initialise_table(df):
     children = []
-    figure, total_msgs = data_analysis.display_num_of_messages(df)
+    figure, total_msgs = data_analysis.display_num_of_messages(
+        df, plot_title="Total Number of Messages"
+    )
     children.append(
         html.P(
             [
@@ -446,7 +475,12 @@ def initialise_media(df):
 
 def initialise_quotes(df):
 
-    images, captions = data_analysis.display_quote(df)
+    quotes = data_analysis.display_quote(df)
+
+    if quotes is None:
+        return None
+    else:
+        images, captions = quotes[0], quotes[1]
 
     return [
         html.Img(
@@ -533,7 +567,7 @@ def generate_control_card():
         children=[
             dcc.Upload(
                 id="upload-data",
-                children=html.Div(["Drag and Drop or ", html.A("chat file")]),
+                children=html.Div(["Drag and Drop or ", html.A("chat file (.txt)")]),
                 style={
                     "width": "100%",
                     "height": "60px",
@@ -546,6 +580,7 @@ def generate_control_card():
                 },
                 # Allow multiple files to be uploaded
                 multiple=False,
+                accept=".txt",
             ),
             dcc.Store(id="original-df"),
             html.Div(id="output-data-upload", children=[]),
@@ -585,3 +620,52 @@ def get_numbers_dropdown(author_names, phone_numbers):
             )
         )
     return box
+
+
+def get_data_loading_error_message():
+    error_data_loading = base64.b64encode(
+        open(ASSETS_PATH.joinpath("sad.jpg"), "rb").read()
+    )
+    return [
+        html.P(
+            children=[
+                "Hi there! We currently don't support the header format associated with the file you have tried to upload and we \
+            cannot read/analyse your group chat right now. Please report this issue by either sending an email to ",
+                html.A("chatdashapp(at)gmail.com", href="mailto:chatdashapp@gmail.com"),
+                " or creating a new issue on ",
+                html.A("Github", href="https://github.com/natworks/chatdash/issues"),
+                ".",
+            ],
+            style={
+                "margin-top": "5rem",
+            }
+        ),
+        html.Img(
+            src=utils.HTML_IMG_SRC_PARAMETERS + error_data_loading.decode(),
+            style={
+                "display": "block",
+                "margin-left": "auto",
+                "margin-right": "auto",
+                "margin-top": "10rem",
+                "width": "50%",
+
+            },
+        ),
+        html.Caption(
+            children=[
+                "Original Image by: Matthew Henry ",
+                html.A(
+                    "(@matthewhenry)",
+                    href="https://unsplash.com/@matthewhenry",
+                ),
+                " from Unsplash",
+            ],
+            style={
+                "display": "block",
+                "margin-left": "auto",
+                "margin-right": "auto",
+                "width": "100%",
+                "font-size": "10px",
+            },
+        ),
+    ]

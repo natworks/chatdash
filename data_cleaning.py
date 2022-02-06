@@ -8,17 +8,25 @@ import utils
 
 def preprocess_input_data(chat_file):
 
+    chat_df = None
+    source = None
+
     try:
         chat = pd.read_csv(
             StringIO(chat_file.decode("utf-8")), sep=",", parse_dates=[0]
         )
         return chat, "signal"
     except:
+        pass
+    try:
         og_df = file_converter.convert_text_to_df(
             StringIO(chat_file.decode("utf-8")).read()
         )
         chat = process_input(og_df.iloc[1:])
+        chat.reset_index(inplace=True)
         return chat, "whatsapp"
+    except:
+        return chat_df, source
 
 
 def process_input(chat_data: pd.DataFrame):
@@ -61,7 +69,13 @@ def get_users(chat_data):
     return author_names, phone_numbers
 
 
-def fix_phone_numbers(chat_data, num_name_pairs):
+def fix_phone_numbers(chat_data, phone_dropdowns):
+    _, phone_numbers = get_users(chat_data)
+    num_name_pairs = {
+        pn: name
+        for pn, name in zip(phone_numbers, phone_dropdowns)
+        if name != "Use number"
+    }
 
     for num, name in num_name_pairs.items():
         chat_data.loc[chat_data["author"] == num, "author"] = name
