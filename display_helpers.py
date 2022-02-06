@@ -475,7 +475,12 @@ def initialise_media(df):
 
 def initialise_quotes(df):
 
-    images, captions = data_analysis.display_quote(df)
+    quotes = data_analysis.display_quote(df)
+
+    if quotes is None:
+        return None
+    else:
+        images, captions = quotes[0], quotes[1]
 
     return [
         html.Img(
@@ -630,7 +635,10 @@ def get_data_loading_error_message():
                 " or creating a new issue on ",
                 html.A("Github", href="https://github.com/natworks/chatdash/issues"),
                 ".",
-            ]
+            ],
+            style={
+                "margin-top": "5rem",
+            }
         ),
         html.Img(
             src=utils.HTML_IMG_SRC_PARAMETERS + error_data_loading.decode(),
@@ -638,12 +646,14 @@ def get_data_loading_error_message():
                 "display": "block",
                 "margin-left": "auto",
                 "margin-right": "auto",
+                "margin-top": "10rem",
                 "width": "50%",
+
             },
         ),
         html.Caption(
             children=[
-                "Original Image by: Matthew Henry",
+                "Original Image by: Matthew Henry ",
                 html.A(
                     "(@matthewhenry)",
                     href="https://unsplash.com/@matthewhenry",

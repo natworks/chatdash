@@ -37,27 +37,33 @@ DATA_PATH = BASE_PATH.joinpath("data").resolve()
 # demo data
 default_df = pd.read_csv(DATA_PATH.joinpath("random_generator_v3.txt"), parse_dates=[0])
 
-TAG_ID = os.getenv("ACCESS_KEY")
+app.index_string = """<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-115571481-2"></script>
+        <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
 
-app.html_layout = (
-    """
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id={}"></script>
-""".format(
-        TAG_ID
-    )
-    + """<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-"""
-    + """
-  gtag('config', '{}');
-</script>
-""".format(
-        TAG_ID
-    )
-)
+        gtag('config', 'UA-115571481-2');
+        </script>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>"""
+
 
 # main app
 app.layout = html.Div(
@@ -82,8 +88,8 @@ app.layout = html.Div(
             id="right-column",
             className="eight columns",
             children=[
-                html.H6("Total Number of Messages"),
-                html.Hr(),
+                html.H6("Total Number of Messages", id="msg_header", style={}),
+                html.Hr(id="msg_hr", style={}),
                 # Overall number of messages
                 dcc.Loading(
                     id="loading-input-1",
@@ -103,8 +109,8 @@ app.layout = html.Div(
                     type="default",
                 ),
                 html.Br(),
-                html.H6("Chatting Patterns"),
-                html.Hr(),
+                html.H6("Chatting Patterns", id="chatting_patterns_header", style={}),
+                html.Hr(id="chatting_patterns_hr", style={}),
                 dcc.Loading(
                     id="loading-input-2",
                     children=[
@@ -123,10 +129,12 @@ app.layout = html.Div(
                     ],
                     type="default",
                 ),
-                html.H6("First Responder"),
-                html.Hr(),
+                html.H6("First Responder", id="responder_header", style={}),
+                html.Hr(id="responder_hr", style={}),
                 html.P(
-                    "This heatmap shows what percentage of the sender's messages was first replied by each of the group members."
+                    "This heatmap shows what percentage of the sender's messages was first replied by each of the group members.",
+                    id="responder_phrase",
+                    style={},
                 ),
                 dcc.Loading(
                     id="loading-input-8",
@@ -146,8 +154,8 @@ app.layout = html.Div(
                     ],
                     type="default",
                 ),
-                html.H6("Your favourite emojis"),
-                html.Hr(),
+                html.H6("Favourite Emojis", id="emoji_header", style={}),
+                html.Hr(id="emoji_hr", style={}),
                 dcc.Loading(
                     id="loading-input-3",
                     children=[
@@ -166,8 +174,8 @@ app.layout = html.Div(
                     ],
                     type="default",
                 ),
-                html.H6("Media Sharing"),
-                html.Hr(),
+                html.H6("Media Sharing", id="media_header", style={}),
+                html.Hr(id="media_hr", style={}),
                 dcc.Loading(
                     id="loading-input-4",
                     children=[
@@ -186,8 +194,8 @@ app.layout = html.Div(
                     ],
                     type="default",
                 ),
-                html.H6("Word Cloud"),
-                html.Hr(),
+                html.H6("Word Cloud", id="word_cloud_header", style={}),
+                html.Hr(id="word_cloud_hr", style={}),
                 dcc.Loading(
                     id="loading-input-5",
                     children=[
@@ -204,8 +212,8 @@ app.layout = html.Div(
                     ],
                     type="default",
                 ),
-                html.H6("Reliving Some of Your Messages"),
-                html.Hr(),
+                html.H6("Reliving Some of Your Messages", id="quotes_header", style={}),
+                html.Hr(id="quotes_hr", style={}),
                 html.Div(
                     id="quotes",
                     children=[
@@ -296,6 +304,73 @@ def load_data(contents):
             json_data["input_source"] = input_source
 
         return json.dumps(json_data)
+
+
+@app.callback(
+    Output("msg_header", "style"),
+    Output("msg_hr", "style"),
+    Output("chatting_patterns_header", "style"),
+    Output("chatting_patterns_hr", "style"),
+    Output("responder_header", "style"),
+    Output("responder_hr", "style"),
+    Output("responder_phrase", "style"),
+    Output("emoji_header", "style"),
+    Output("emoji_hr", "style"),
+    Output("media_header", "style"),
+    Output("media_hr", "style"),
+    Output("word_cloud_header", "style"),
+    Output("word_cloud_hr", "style"),
+    Output("quotes_header", "style"),
+    Output("quotes_hr", "style"),
+    Output("btn-see-media", "style"),
+    Input("original-df", "data"),
+    prevent_initial_call=True,
+    suppress_callback_exceptions=True,
+)
+def handle_incorrect_input(jsonified_cleaned_data):
+    if jsonified_cleaned_data is None:
+        return display_helpers.initialise_table(default_df)
+    else:
+        blob = json.loads(jsonified_cleaned_data)
+
+        if blob["chat_df"] == "FAIL":
+            return (
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+            )
+        else:
+            return (
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                {"margin-bottom": "30px"}
+            )
 
 
 @app.callback(
@@ -466,6 +541,9 @@ def display_quotes(jsonified_cleaned_data, click, phone_dps):
         return display_helpers.initialise_quotes(chat_df)
 
 
+# --------- Display Loading Icons ---------#
+
+
 @app.callback(
     Output("loading-output-1", "children"), Input("loading-input-1", "loading_state")
 )
@@ -520,6 +598,9 @@ def input_triggers_spinner(value):
 def input_triggers_spinner(value):
     time.sleep(1)
     return value
+
+
+# --------- Handle FAQ Interaction ---------#
 
 
 @app.callback(

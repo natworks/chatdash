@@ -502,6 +502,9 @@ def display_quote(chat_data: pd.DataFrame):
     images = {}
     captions = {}
 
+    if ACCESS_KEY is None:
+        return None
+
     url = f"https://api.unsplash.com/photos/random/?topics=='nature'&count=3&orientation=landscape&client_id={ACCESS_KEY}"
 
     r = requests.get(url)  # , data=token_data, headers=token_headers)
