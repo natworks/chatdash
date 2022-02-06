@@ -14,22 +14,34 @@ https://github.com/lucasrodes/whatstk/blob/main/whatstk/whatsapp/parser.py
 
 def convert_text_to_df(chat_info_as_text):
 
-    hformat = header_extractor.extract_header_from_text(chat_info_as_text)
-    if not hformat:
+    header_information = header_extractor.extract_header_from_text(chat_info_as_text)
+    
+    if header_information is None:
         return None
 
-    # Generate regex for given hformat
-    r, r_x = generate_regex(hformat=hformat)
-
-    # Parse chat to DataFrame
+    hformat, dates_codes= header_information[0], header_information[1]
+   
     try:
+        # Generate regex for given hformat
+        r, r_x = generate_regex(hformat=hformat)
+        # Parse chat to DataFrame
         df = _parse_chat(chat_info_as_text, r)
     except:
-        pass
+        day_pos = dates_codes.index("%d")
+        year_pos = dates_codes.index("%y")
+        month_pos = dates_codes.index("%m")
+
+        if (day_pos < year_pos < month_pos) or (month_pos < year_pos < day_pos):
+            hformat = hformat.replace("%y", "tmonth").replace("%m", "%y").replace("tmonth", "%m")
+
+        r, r_x = generate_regex(hformat=hformat)
+        df = _parse_chat(chat_info_as_text, r)
+
+    # try again with a different date order
 
     df = _remove_alerts_from_df(r_x, df)
-
     df = _add_schema(df)
+    
     return df
 
 
