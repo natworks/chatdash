@@ -33,7 +33,7 @@ def description_card():
                                 "exported from WhatsApp",
                                 href="https://faq.whatsapp.com/android/chats/how-to-save-your-chat-history/?lang=en",
                             ),
-                            ". On the right you can see a demo of what the analysis will look like.",
+                            ". Scroll on to see a demo of the analysis.",
                         ]
                     ),
                     html.P(
@@ -42,7 +42,7 @@ def description_card():
                                 "Simply load your chat file below to get started!",
                                 style={"font-weight": "bold"},
                             ),
-                            " Please note that loading may take a few seconds depending on the size of you file.",
+                            " Please note that loading may take a few seconds depending on the size of your file.",
                         ]
                     ),
                 ],
@@ -137,7 +137,7 @@ def get_faq():
                         className="content",
                         children=[
                             html.P(
-                                "Media information relies on parsing the file searching for certain key phrases. They vary according to your device's system langue. At the moment, ChatDash only supports English, Portuguese, and French."
+                                "Media information relies on parsing the file searching for certain key phrases. They vary according to your device's system language. At the moment, ChatDash only supports English, Portuguese, and French."
                             ),
                         ],
                         id="bt4-child",
