@@ -473,89 +473,51 @@ def initialise_media(df):
     return get_biggest_spammer(df) + get_media_info(df, source="android")
 
 
+def get_image_html(images, captions):
+    images_to_display = []
+    for i in range(len(images)):
+        images_to_display += [
+            html.Img(
+                src=utils.HTML_IMG_SRC_PARAMETERS
+                + utils.pil_to_b64(images[i], enc_format="png"),
+                width="100%",
+            ),
+            html.Caption(
+                children=[
+                    "Original Image by: ",
+                    html.A(
+                        f"{captions[i][0]}",
+                        href=f"https://unsplash.com/{captions[i][1]}?utm_source=ChatDash&utm_medium=referral",
+                    ),
+                    " on ",
+                    html.A(
+                        "Unsplash",
+                        href="https://unsplash.com/?utm_source=ChatDash&utm_medium=referral",
+                    ),
+                ],
+                style={
+                    "display": "block",
+                    "margin-left": "auto",
+                    "margin-right": "auto",
+                    "width": "100%",
+                    "font-size": "10px",
+                    "margin-top": "0px",
+                    "margin-bottom": "10px",
+                },
+            ),
+        ]
+
+    return images_to_display
+
+
 def initialise_quotes(df):
 
     quotes = data_analysis.display_quote(df)
 
     if quotes is None:
         return None
-    else:
-        images, captions = quotes[0], quotes[1]
 
-    return [
-        html.Img(
-            src=utils.HTML_IMG_SRC_PARAMETERS
-            + utils.pil_to_b64(images[0], enc_format="png"),
-            width="100%",
-        ),
-        html.Caption(
-            children=[
-                f"Original Image by: {captions[0][0]} ",
-                html.A(
-                    f"({captions[0][1]}) ",
-                    href=f"https://unsplash.com/{captions[0][1]}",
-                ),
-                "from Unsplash",
-            ],
-            style={
-                "display": "block",
-                "margin-left": "auto",
-                "margin-right": "auto",
-                "width": "100%",
-                "font-size": "10px",
-                "margin-top": "0px",
-                "margin-bottom": "10px",
-            },
-        ),
-        html.Img(
-            src=utils.HTML_IMG_SRC_PARAMETERS
-            + utils.pil_to_b64(images[1], enc_format="png"),
-            width="100%",
-        ),
-        html.Caption(
-            children=[
-                f"Original Image by: {captions[1][0]} ",
-                html.A(
-                    f"({captions[1][1]}) ",
-                    href=f"https://unsplash.com/{captions[1][1]}",
-                ),
-                "from Unsplash",
-            ],
-            style={
-                "display": "block",
-                "margin-left": "auto",
-                "margin-right": "auto",
-                "width": "100%",
-                "font-size": "10px",
-                "margin-top": "0px",
-                "margin-bottom": "10px",
-            },
-        ),
-        html.Img(
-            src=utils.HTML_IMG_SRC_PARAMETERS
-            + utils.pil_to_b64(images[2], enc_format="png"),
-            width="100%",
-        ),
-        html.Caption(
-            children=[
-                f"Original Image by: {captions[2][0]} ",
-                html.A(
-                    f"({captions[2][1]})",
-                    href=f"https://unsplash.com/{captions[2][1]}",
-                ),
-                " from Unsplash",
-            ],
-            style={
-                "display": "block",
-                "margin-left": "auto",
-                "margin-right": "auto",
-                "width": "100%",
-                "margin-bottom": "40px",
-                "margin-top": "0px",
-                "font-size": "10px",
-            },
-        ),
-    ]
+    return get_image_html(quotes[0], quotes[1])
 
 
 def generate_control_card():
@@ -629,8 +591,7 @@ def get_data_loading_error_message():
     return [
         html.P(
             children=[
-                "Hi there! We currently don't support the header format associated with the file you have tried to upload and we \
-            cannot read/analyse your group chat right now. Please report this issue by either sending an email to ",
+                "Hi there! Unfortunately, we are currently unable to read the file you have tried to upload and can't analyse your chat right now. Please report this issue by either sending an email to ",
                 html.A("chatdashapp(at)gmail.com", href="mailto:chatdashapp@gmail.com"),
                 " or creating a new issue on ",
                 html.A("Github", href="https://github.com/natworks/chatdash/issues"),
@@ -638,7 +599,7 @@ def get_data_loading_error_message():
             ],
             style={
                 "margin-top": "5rem",
-            }
+            },
         ),
         html.Img(
             src=utils.HTML_IMG_SRC_PARAMETERS + error_data_loading.decode(),
@@ -648,17 +609,20 @@ def get_data_loading_error_message():
                 "margin-right": "auto",
                 "margin-top": "10rem",
                 "width": "50%",
-
             },
         ),
         html.Caption(
             children=[
-                "Original Image by: Matthew Henry ",
+                "Original Image by: ",
                 html.A(
-                    "(@matthewhenry)",
-                    href="https://unsplash.com/@matthewhenry",
+                    "Matthew Henry",
+                    href="https://unsplash.com/@matthewhenry?utm_source=ChatDash&utm_medium=referral",
                 ),
-                " from Unsplash",
+                " on ",
+                html.A(
+                    "Unsplash",
+                    href="https://unsplash.com/?utm_source=ChatDash&utm_medium=referral",
+                ),
             ],
             style={
                 "display": "block",

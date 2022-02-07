@@ -293,10 +293,16 @@ def parse_contents(jsonified_cleaned_data, children):
 )
 def load_data(contents):
     if contents is not None:
-        content_type, content_string = contents.split(",")
+        
+        try:
+            content_type, content_string = contents.split(",")
+        except:
+            return json.dumps({"chat_df": "FAIL", "input_source": "FAIL"})
+
         chat_df, input_source = data_cleaning.preprocess_input_data(
             base64.b64decode(content_string)
         )
+        
         if chat_df is None or input_source is None:
             json_data = {"chat_df": "FAIL", "input_source": "FAIL"}
         else:
